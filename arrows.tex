@@ -1,3 +1,4 @@
+
 %\documentclass[11pt,final,a4paper,leqno]{article}
 \documentclass[11pt,final,a4paper]{article}
 \usepackage[ngerman,english]{babel}
@@ -688,43 +689,74 @@ arithmetics.
 
 
 \subsection{Dependently-Typed Solution}
-A dependently typed programming language is a language, that mixes expressions with types and therefore allows the calculate of
+A dependently typed programming language is a language, that mixes expressions with types. It therefore allows the calculate of
 types within that same language. ``Normal'' function definitions come with a well defined type. Polymorphic types are possible and
-allow the definition of functions that are more flexible in their type. But polymorphism isn't flexible enough to express data
+allow the dfefinition of functions that are more flexible in their type. But polymorphism isn't flexible enough to express data
 types like real vectors. In example the addition of two vectors results in a new vector. They type of that new vector then depends
 on the type of the input vectors and is the feature that gives such languages their name.
 
 \par
 Summarizing the previously expressed solutions they all try to fix a unitary problem. And the problem depends on the fact that
-``real'' vectors aren't purely functional data structures in the Haskell sense. For ``real'' vectors the length of the vector must
-show up in it's data type so that a function can match against it. 
+vectors aren't a purely functional data structure in the Haskell sense. For a vector the length of it selfe must show up in it's
+data type so that a function can match against it.
 
 \par
 The transfer of tuple arrows to vector arrows not only changes the inner data type. Also the projection maps from the inner data
 type need to be translated to the vector version. A tuple makes it pretty easy to define projection maps. There are only two
 possible solutions, one for the first element \hs{fst} and another one for the last element \hs{snd}. The pendant in the arrow
-class are the \hs{first} and \hs{second} functions.
+class are the \hs{first} and \hs{second} functions. These both mirror the typical tuple projection maps in Haskell, namely
+\hs{fst} and \hs{snd}. 
 
 \par 
-With vectors the \hs{first} statement is easy to translated; the \hs{second} expression is the head-scratcher. First of all we've
-noticed that its name is misleading for vectors. The meaning is to apply an arrow to arguments aligned with the end. So for
-example an \hs{second aSwitch} arrow applied to a vector $(1, 2, 3, 4, 5)$ should evaluate to $(1, 2, 3, 5, 4)$. We propose a more
-accurate name for the \hs{second} statement, namely \hs{last}.
-
-\par 
-While \hs{aSwitch} is of type $Vec_n^{Int}$, the expression \hs{last aSwitch} must be of type $Vec_{k+n}^{Int}, k \ge 0$. With a
-dependently typed language this should be possible to express in the data type.
+With vectors the \hs{first} statement is straight forward; the \hs{second} expression is more or less the head-scratcher. To
+implement the \hs{first} function, the only constraint is, that the input vector is bigger or equal to the one expected by the
+function \hs{first} is supplied to. In the \hs{second} case, this constraint also needs to be true, but also the function must be
+applied to the sub vector aligned with the end of the input vector. This can either be achieved by calculating the size of the sub
+vector that is ignored and than apply the function to the remaining one. It can also be done via reversing the vector multiple
+times and than applying the function to the front of the vector. 
 
 \par
-There are multiple languages with dependent types out there. On with a pretty good connection to Haskell is Agda. It is totally
-written in Haskell and can also compile into it. Nonetheless the developers of Agda say, compiling is not one of the main features
-of their language. In fact the type checking is much more important. The following describes how an arrow type class would look in
-a functional language with dependent types.
+In this case it is obvious, that the naming (\hs{first} and \hs{second}) for vectors is at least counter intuitive. For example an
+\hs{second aSwitch} arrow applied to a vector $(1, 2, 3, 4, 5)$ should evaluate to $(1, 2, 3, 5, 4)$. We propose a more accurate
+name for the \hs{second} statement, namely \hs{last}.
+
+\par 
+While \hs{aSwitch} is of type $Vec_n^{Int}$, the expression \hs{last aSwitch} must be of type $Vec_{k+n}^{Int}, k \ge
+0$. Typically this is hard to express in a functional language, but in a dependently typed language this should be possible to
+express in the data type.
+
+\par
+There are multiple languages with dependent types out there. On with a pretty good connection to Haskell is Agda. It is written in
+Haskell and can also compile into it. Nonetheless the developers of Agda say, compiling is not one of the main features of their
+language. In fact type checking is of much more interest in a dependent language. The following describes how an arrow type class
+would look in a functional language with dependent types.
+
+
+\begin{haskell}
+record VArrow (_~~>_ : Set -> Set → Set) : Set₁ where 
+  field
+    arr    : forall {B n m}     -> (Vec B n -> Vec B m) -> (Vec B n) ~~> (Vec B m)
+    firsts : forall {B n m k}   -> Vec B n ~~> Vec B m -> Vec B (n + k) ~~> Vec B (m + k)    
+    lasts  : forall {B n m k}   -> Vec B n ~~> Vec B m -> Vec B (n + k) ~~> Vec B (m + k) 
+    _>>>_  : forall {B n m k}   -> Vec B n ~~> Vec B m -> Vec B m ~~> Vec B k -> Vec B n ~~> Vec B k
+    _***_  : forall {B n m k j} -> Vec B n ~~> Vec B m -> Vec B k ~~> Vec B j -> Vec B (n + k) ~~> Vec B (m + j)
+    _&&&_  : forall {B n m k}   -> Vec B n ~~> Vec B m -> Vec B n ~~> Vec B k -> Vec B n ~~> Vec B (m + k) 
+  infixr 2 _>>>_
+  infixr 2 _***_
+  infixr 2 _&&&_
+\end{haskell}
 
 \begin{itemize}
-\item show benefits
-\item real vectors
+\item 
+  \begin{itemize}
+  \item tuple arrows => kartesische produkt kategorien
+  \item vector arrows => produkt familien kategorien 
+  \end{itemize}
+
 \item problems with agda / dependent typed solutions 
+  \begin{itemize}
+  \item ebenfalls last lässt sich nicht sauber definieren / Gründe??? 
+  \end{itemize}
 \end{itemize}
 
 \subsection{Vector-Arrows are not Arrows}
@@ -733,9 +765,6 @@ a functional language with dependent types.
 
 Conclusion: That is dependent typing and Haskell is not (yet) a dependently typed function programming language. And all in all it
 seems that the Vec-Type together with the Arrows-Instances is too much dependent typing for Haskell
-
-
-\subsection{Using a dependently types language}
 
 
 \section{Copeing with \hs{arr}-Problem}
