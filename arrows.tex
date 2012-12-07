@@ -1,4 +1,3 @@
-
 %\documentclass[11pt,final,a4paper,leqno]{article}
 \documentclass[11pt,final,a4paper]{article}
 \usepackage[ngerman,english]{babel}
@@ -61,9 +60,10 @@
 \newcommand{\xfig}[4][0.9] {%      %xfig figure einfügen, [Skalierung], {Dateiname ohne Endung}, {Beschriftung}, {label}
     \begin{figure}[ht]
         \begin{center}
-            \graphicspath{{./}{Images/}}
+%            \graphicspath{{./}{Images/}}
             \scalebox{#1}{%
-                \input{Images/#2}
+%                \input{Images/#2}
+                \input{#2}
             }
             \caption{\label{#4} #3}
         \end{center}
@@ -131,35 +131,35 @@ generation of typical HDL code like VHDL. They can be used to simulate behavior 
 gives a brief overview of the \hs{Grid}-Arrow that can be used to generate VHDL code or to simulate a circuit.
 
 \subsection{Grid-Arrow}
-The \hs{Grid}-Arrow is a combination of an executable arrow and a descriptive hardware component part. In a first approach one can imagine the descriptive part to live inside the arrow. But that does not 
-They are stored equally to
-each other inside a tuple. The arrow resides in the first, the graph occupies the second part of the tuple.
+The \hs{Grid}-Arrow is a combination of an executable arrow and a descriptive hardware component part. In a first approach one can
+imagine the descriptive part to live inside the arrow. But that does not work out, so they are stored equal to each other inside a
+tuple. The arrow resides in the first, the graph occupies the second part of the tuple.
 \begin{haskell}
   newtype Grid a b c = GR (a b c, CircuitDescriptor)
 \end{haskell} 
 Alongside with the arrow execution, the generated Netlist is stored inside the graph like data structure called a
-\hs{CircuitDescriptor}.  A Grid is the analog to the snap circuit toys from childhood. It is a grid surface where hardware
-elements can be combined with each other to compose new structures and analyze them. A \hs{Grid} is not only the surface to
-combine hardware components, but it also is a recursive surface. So it could be used as hardware component itself which means a
-\hs{Grid} is an arrow on its own.
+\hs{CircuitDescriptor}.  The name Grid is analog chosen to the snap circuit toys from childhood, where one also could combine
+hardware elements arbitrary. The Grid type is a surface where hardware elements can be combined with each other to compose new
+structures and analyze them. But it is not only the surface to combine hardware components, it's also a recursive surface. So it
+is used as hardware component itself which means a \hs{Grid} is an arrow on its own.
 
 
 \subsection{Circuit-Descriptor}
-The descriptive part of the \hs{Grid} is of type \hs{CircuitDescriptor}. A \hs{CircuitDescriptor}, like the name suggests,
-describes a circuits details. The combination sequence of the hardware parts, the pin layout, their cabling structure and also
-recursively all subcomponents are represented inside a \hs{CircuitDescriptor}. A circuit with such a descriptor has enough detail
-to be expressed as a Netlist.
+The descriptive part of the arrow is called a \hs{CircuitDescriptor}. Something of type \hs{CircuitDescriptor}, like the name
+suggests, describes a circuit in detail. The combination sequence of the hardware parts, the pin layout, their cabling structure
+and also recursively all subcomponents are represented inside the \hs{CircuitDescriptor}. A circuit with such a descriptor has
+enough detail to be expressed as a Netlist.
 
 \par
 The actual data type is divided into three\footnote{actually four, because the empty descriptor requires it's own} unique
 descriptors:
 \begin{itemize}
-\item \emph{Combinatorial:} are the parts of a circuit that are describable without a clock or buffered data. For example boolean
-  logic gates fall into this category.
+\item \emph{Combinatorial:} are the parts of a circuit that are describable without a clock or buffered data. For example all
+  Boolean logic gates fall into this category.
 \item \emph{Register:} A register is used to describe the storage of data on the one hand and is used to clock computations on the
-  other hand. The way a register is realized depends on the target platform and there is no need to now it in detail at this
-  point.
-\item \emph{Loop:} Those Hardware components that are referring them self are handled via the looping section.
+  other hand. The implementation of a register highly depends on the target platform. There is no need to know it's details at
+  this point.
+\item \emph{Loop:} Those Hardware components that are referring onto them self are handled in the looping section.
 \end{itemize}
 
 \begin{haskell}
@@ -187,10 +187,9 @@ descriptors:
   type Netlist = CircuitDescriptor
 \end{haskell} 
 
-The \hs{MkCombinatorial} and the \hs{MkLoop} parts show the classic functional graph structure where there are two lists. One
-containing the edges (\hs{edges :: [Edge]}) and another one with the nodes (\hs{nodes :: [CircuitDescriptor]}).  Additionally
-there are information that are the same for every circuit and they are stored inside the (\hs{nodeDesc :: NodeDescriptor}) with
-the graph.
+The \hs{MkCombinatorial} and the \hs{MkLoop} parts reveal a classic functional graph structure that is build from two lists. One
+containing the edges (\hs{edges :: [Edge]}) and the other containing the nodes (\hs{nodes :: [CircuitDescriptor]}).  Additionally
+there are information that are equal for every circuit and are stored inside the (\hs{nodeDesc :: NodeDescriptor}) with the graph. At last, information about the hardware's performance (space and time) is stored alongside with the graph.
 \begin{haskell}
   data NodeDescriptor
     = MkNode
@@ -201,78 +200,60 @@ the graph.
       }
     deriving (Eq)
 \end{haskell} 
-Additionally some informations about the graphs performance (like space- and time consumption) are stored alongside.
+% Each node itself is a \hs{CircuitDescriptor} and contains a list of \hs{CircuitDescriptor}s, so each node could be described
+% recursively, which suits hardware very well.
 
-\par 
-Each node itself is a \hs{CircuitDescriptor} and contains a list of \hs{CircuitDescriptor}s, so each node could be described
-recursively, which suits hardware very well.
-
-\par 
-This data structure contains the typical functional way to describe graphs - two lists - but does not enforce to actually build a
-graph. It is a common method to supply \hs{smart constructor}s along with the data type. These constructors are functions that
-take all the elements the actual \hs{CircuitDescriptor} needs. Than they check the inputs and only generate an output if the
-inputs fulfill given constraints. In that way only valid hardware components can be generated.
+A general problem with such data structures is, they do describe a graph but they don't enforce to build a correct one. In such
+cases it's common to supply \hs{smart constructor}s along with the data type. These constructors are functions that take all the
+elements the actual \hs{CircuitDescriptor} exists of. Than they check the inputs against given constraints and only generate the
+output if the input fulfills them. In that way it's assured that only valid hardware components are constructed.
 
 \par
-A wire is a connection between two \hs{Pins} of one or two hardware components. A wire connects an output pin - called the source
-- of one component to the input pin - called the sink - of anther component. For looping hardware it is possible that the two
-components are the same.
+For example the combinatorial section only accepts non looping connections. A wire is a connection between two \hs{Pins} of one or
+two hardware components. The output pin is called the source and the input pin is called the sink of a component. Our approach enforces that every component on a Grid is wired up. 
 \begin{haskell}
   type Anchor       = (Maybe CompID, PinID)
-  type SinkAnchor   = Anchor
-  type SourceAnchor = Anchor
 \end{haskell}
-
-The \hs{Maybe CompID} of the \hs{Anchor}s definition is due to the in- and output pins of the whole circuit. Most of the hardware
-components come with inputs and outputs, which are the pins that the hardware brick come with. These global in- and outputs must
-be modeled in one way or the other. Here they have no component id, but only a pin id where they come from or go to.
-
+The outer most grid can't be wired up as it represents a not yet placed piece of hardware. This is mirrored by the \hs{Maybe
+  CompID} in the type of an anchor. \xfig[.9]{ic-pin.pspdftex}{Image of IC {\tiny (by Sergei Frolov)}}{img:ic-with-pin}
 
 \subsection{Lists through Tuples}
-There are operators that are essential to work with classical arrows, because of their tupled inner structure. That means for a
-circuit, each one processes only a few inputs and turns them into outputs. The inputs need to be structured in a way, that the
-function is only called with the correct inputs. In example, component $c_0$ produces the outputs $s_0, s_1, s_2, s_3$. Another
-component $c_1$ processes $s_0$ and $s_2$; $c_2$ acts on $s_1$ and $s_3$. The process of restructuring the output of one function
-into an input to another function is called tuple'ing. A function that does such tuple'ing is \hs{mvRight}. This takes an argument
-of the structure \((x,(y,z))\) to a different structure \((y,(x,z))\).
+The Haskell arrow interface is build upon tuples and therefore prefers them. Circuits come often with a list like interface so we
+model them with tuples. There are operators, like binary logic operators, that perfectly match the tuple structure. In example,
+component $C_0$ produces the outputs $s_0, s_1, s_2, s_3$. Another component $C_1$ processes $s_0$ and $s_2$; $C_2$ acts on $s_1$
+and $s_3$. The process of restructuring the output of one function into an input to another function is called retuple'ing because
+it is only possible to change the way data is tupled into each other. As example a function that does such tuple'ing is \hs{mvRight}. This one takes an argument of the structure \((x,(y,z))\) to a different structure \((y,(x,z))\).
 
 \begin{haskell}
 mvRight :: (Arrow a) => Grid a (my, (b, rst)) (b, (my, rst))
-mvRight 
-  =   aDistr
+mvRight           -- aFloatR
+  =   aDistr      -- aDistr : is that really aDistr?
   >>> first aSnd
 \end{haskell} 
 
-The first arrow that is invoked here is \hs{aDistr} which is the pendant of the distribution law. \hs{aDistr} takes something of
-structure \(x, (y, z)\) into something of structure \((x, y), (x, z))\), it distributes the first element over the second
-one. That arrow is combined with another one, namely \hs{first aSnd}. In fact, this really is an arrow \hs{aSnd} with a
-scoop-operator \hs{first} such that \hs{aSnd} works only on the first element of the tuple. The resulting arrow takes a structure
-\(((x_1,x_2), (y_1,y_2))\) to a resulting structure \((x_2, (y_1, y_2))\). In the end the \hs{mvRight} arrow moves the first
-element of the tuple one step to the right. Of curse this function assumes a structure where always the first element of a tuple
-is a value, the second is another tuple such like: \((v_1, (v_2, (v_3, (v_4, v_5, (\dots)))))\)
+There are two arrows involved here, \hs{aDistr} and \hs{aSnd}. With \hs{aDistr} the first element is distributed over the second
+one and with \hs{first aSnd} the first occurrence is dropped. The \hs{mvRight} arrow floats the first element one position to the
+right. Of curse this arrow assumes a structure where always the first element of a tuple is a value, the second is another tuple:
+\((v_1, (v_2, (v_3, (v_4, v_5, (\dots)))))\)
 
-
-
-Another common task over these list like tuple structure is to apply one arrow to the front and than concentrate with the
-remaining arrows on the remaining structure. For this purpose the operator \hs{>:>} helps to clarify the
+\par
+A common task over the list like tuples is to apply an arrow to the front and than concentrate the remaining calculation on the
+remaining inner structure. For this purpose the operator \hs{>:>} helps to clarify the code that describes such computations.
 \begin{haskell}
   aA >:> aB = aA >>> (second aB)
 \end{haskell} 
 
-The operator \hs{>:>} is based on the \hs{>>>} operator with a minor difference. The first supplied arrow is executed over the
-whole input data tuple, while the second arrow is only applied to the second part of that tuple. Such an operator comes handy
-while list like tuple structures are used and are processed from the left to the right. This is exactly the case for the
-polynomial division.
+The operator \hs{>:>} is based on the \hs{>>>} operator with a difference. The first supplied arrow is executed over the whole
+input data tuple, while the second one is applied only to the second part of the tuple. Such an operator comes handy as long list
+like tuple structures are used and are processed from the left.
 
-
-
-While working with tuple lists, it is often convenient to just reorder the parenthesis around the data so that the selector
-functions like \hs{first} result in just the right behavior. Two arrows are mentioned here that exploit the associativity of
-arrows, namely \hs{a\_aBC2ABc} and \hs{a\_ABc2aBC}. The somewhat cryptographic names only mirror the changing parenthesis, upper
-case letters show the two positions that are enclosed by the brackets, the lower case letter is the isolated position.
+\par
+While working with tuple lists, it is often needed to reorder the parenthesis around the data so that selector functions like
+\hs{first} process the right data. The two arrows \hs{a\_xXX2XXs} and \hs{a\_XXx2xXX} exploit the associative law of arrows. The
+cryptic names mirror the changing structure, upper case letters show the grouped position.
 \begin{align*}
-  \text{a\_aBC2ABc} &: (a, (b, c)) \rightarrow ((a, b), c) \\
-  \text{a\_ABc2aBC} &: ((a, b), c) \rightarrow (a, (b, c))
+  \text{a\_xXX2XXx} &: (a, (b, c)) \rightarrow ((a, b), c) \\
+  \text{a\_XXx2xXX} &: ((a, b), c) \rightarrow (a, (b, c))
 \end{align*}
 
 
@@ -330,7 +311,7 @@ crc_checksum_8 crc_polynom polySkip padding start rest
   >>> polySkip
   >>> crc_polynom
 
-  where step =   a_aBC2ABc
+  where step =   a_xXX2XXx
              >>> first 
                  (   aFlip
                  >>> polySkip
