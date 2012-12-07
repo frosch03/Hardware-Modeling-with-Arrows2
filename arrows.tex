@@ -88,45 +88,52 @@
 
 \section{Hardware Modeling in the Functional Programming Paradigm: Recent Approaches}
 \label{recent_approaches}
+% TODO : Is stated in intro? 
 As stated in the introduction, modeling hardware in functional languages is old news, there have been various approaches in the
-past. The beginning dates back into the early 80s where Mary Sheeran came up with a functional HDL muFP\cite{sheeran:muFP}. In the
-same decade John O'Donnell presented his functional HDL HDRE\cite{hydra:old,donnell}. These two HDL's gave birth to numerous later
-approaches that are base more or less on them.
+past. The beginning dates back to the early 80s where a group around Mary Sheeran came up with a functional HDL (Hardware
+Description Language) muFP\cite{sheeran:muFP}. In the same decade John O'Donnell presented his functional HDL
+HDRE\cite{hydra:old,donnell}. These two HDL's gave birth to numerous later approaches that are base more or less on them.
 
-One of Sheeran's students, Coen Claessen, came later up with a monadic solution called Lava\cite{claessen:hardware}. Ingo Sanders
+One of Sheeran's students, Coen Claessen, later came up with a monadic solution called Lava\cite{claessen:hardware}. Ingo Sanders
 et al introduced an approach, ForSyDe \cite{forsyde:phd,forsyde:ieee} that is based on meta programming techniques. Lava, ForSyDe
 and also Hydra %TODO : Hydra reference in literature
-represent HDL's embedded into the functional programming language Haskell; MyHDL \cite{myhdl} is embedded in the functional
-flavored interpreting language Python. There is HML\cite{hml}, a simple HDL which is embedded inside ML, another functional
+represent HDL's embedded around the functional programming language Haskell; MyHDL \cite{myhdl} is embedded in the functional
+flavored interpreter language Python. There is HML\cite{hml}, a simple HDL which is embedded inside ML, another functional
 programming language.
 
 Than there are functional languages that are exclusively designed to describe hardware, like the language SAFL (=Statically
 Allocated Functional Language)\cite{sharp,sharp:flash,sharp:codesign}. This one compiles direct into a netlist; it does not
 support dynamic allocated storage like heaps or stacks since these kind of software features do not map well on silicone.
 
-Another candidate for the functional meta programming languages section is the language \reFLect \cite{reflect}. This one is
+Another candidate for the functional meta programming languages section is the language \reFLect \cite{reflect}. It's one that is
 developed at Intel and tailored for hardware design and theorem proving.
 
 There are good reasons why meta programming (also called \emph{reflexivity}) is beneficial for the use as HDLs. Meta programming
 allows a program to have a representation of itself, usually by providing data structure of the abstract syntax tree. With this
 tool at hand the developer is able to \emph{compute} parts of their program rather than \emph{write}them. This leads to a direct
-and natural implementation of program transformations. Haskell also allows to metaprogramming through a library called ``Template
-Haskell''\cite{haskell:template}.
+and natural implementation of program transformations. Haskell also allows to meta programming through a library called ``Template
+Haskell''\cite{haskell:template}. 
+% TODO : Warum werden Haskells Meta-Programming fähigkeiten stifmütterlich behandelt? 
 
 With cryptol\cite{cryptol:programming} another class of functional HDLs enters the scene. While all the other HDL's are general
-purpose, cryptol is designed to model cryptographic hardware. A sublanguage of cryptol is designed by Galois, explicit to generate
+purpose, cryptol is designed to model cryptographic hardware. A sub-language of cryptol is designed by Galois, explicit to generate
 FPGA implementations \cite{cryptol:fpga}. Cryptol has lately been adopted by an American agency and isn't public developed
 anymore.
 
 \section{Arrows for Hardware development}
-The use of Arrows in the hardware development process is done with arrows, that are specifically designed for this task. They are
-not only used to generate the Netlist. They are also used to simulate behavior or proof properties of the circuit. With this
-section we give a brief overview of the \hs{Grid}-Arrow which is able to do exactly that.
+% TODO : Cite: Generalizing Monads to arrows
+Arrows are lately developed concept in functional programming. They are best described in short as generalized Monads. Arrows
+enable a data flow view onto problems. This fits the hardware developers view which has always been a data flow view, as in
+circuit board layouts or in state flow diagrams. The arrow \emph{proc}-notation also transports the data flow view into the
+source. %TODO: cite ross patterson
+Its easy to generate netlists out of arrows, which basically boils down to a pretty print function. This also holds for the
+generation of typical HDL code like VHDL. They can be used to simulate behavior or proof properties of the circuit. This section
+gives a brief overview of the \hs{Grid}-Arrow that can be used to generate VHDL code or to simulate a circuit.
 
 \subsection{Grid-Arrow}
-The \hs{Grid}-Arrow is a combination of the executable arrow and the descriptive hardware component part. Because none of them
-supersedes the other, they are stored inside a tuple. The function arrow resides in the first, the graph occupies the second part
-of the tuple.
+The \hs{Grid}-Arrow is a combination of an executable arrow and a descriptive hardware component part. In a first approach one can imagine the descriptive part to live inside the arrow. But that does not 
+They are stored equally to
+each other inside a tuple. The arrow resides in the first, the graph occupies the second part of the tuple.
 \begin{haskell}
   newtype Grid a b c = GR (a b c, CircuitDescriptor)
 \end{haskell} 
