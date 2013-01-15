@@ -11,7 +11,7 @@
 \usepackage{textcomp}
 \usepackage{setspace}
 %\usepackage{MnSymbol}
-\usepackage{amsmath} % flush eqations to the left
+\usepackage{amsmath}
 
 \lstnewenvironment{haskell}[1][]{
   \lstset{
@@ -107,24 +107,22 @@ support dynamic allocated storage like heaps or stacks since these kind of softw
 Another candidate for the functional meta programming languages section is the language \reFLect \cite{reflect}. It's one that is
 developed at Intel and tailored for hardware design and theorem proving.
 
-There are good reasons why meta programming (also called \emph{reflexivity}) is beneficial for the use as HDLs. Meta programming
-allows a program to have a representation of itself, usually by providing data structure of the abstract syntax tree. With this
-tool at hand the developer is able to \emph{compute} parts of their program rather than \emph{write}them. This leads to a direct
-and natural implementation of program transformations. Haskell also allows to meta programming through a library called ``Template
-Haskell''\cite{haskell:template}. 
-% TODO : Warum werden Haskells Meta-Programming fähigkeiten stifmütterlich behandelt? 
+There are good reasons why meta programming beneficial for the use as HDLs. Meta programming allows a program to have a
+representation of itself, usually by providing a data structure of the abstract syntax tree. With this tool at hand the developer
+is able to \emph{compute} parts of their program rather than \emph{write} them. This leads to a direct and natural implementation
+of program transformations.
 
 With cryptol\cite{cryptol:programming} another class of functional HDLs enters the scene. While all the other HDL's are general
-purpose, cryptol is designed to model cryptographic hardware. A sub-language of cryptol is designed by Galois, explicit to generate
-FPGA implementations \cite{cryptol:fpga}. Cryptol has lately been adopted by an American agency and isn't public developed
+purpose, cryptol is designed to model cryptographic hardware. A sub-language of cryptol is designed by Galois, explicit to
+generate FPGA implementations \cite{cryptol:fpga}. Cryptol has been adopted by an American agency and isn't public developed
 anymore.
 
 \section{Arrows for Hardware development}
 % TODO : Cite: Generalizing Monads to arrows
-Arrows are lately developed concept in functional programming. They are best described in short as generalized Monads. Arrows
-enable a data flow view onto problems. This fits the hardware developers view which has always been a data flow view, as in
-circuit board layouts or in state flow diagrams. The arrow \emph{proc}-notation also transports the data flow view into the
-source. %TODO: cite ross patterson
+Arrows are lately developed concept in functional programming. As a generalization of Monads, Arrows fit the task of hardware
+development better. Arrows enable a data flow view onto problems. This fits the hardware developers view which has always been a
+data flow view, as in circuit board layouts or in state flow diagrams. The arrow \emph{proc}-notation also transports the data
+flow view into the textual source. %TODO: cite ross patterson
 Its easy to generate netlists out of arrows, which basically boils down to a pretty print function. This also holds for the
 generation of typical HDL code like VHDL. They can be used to simulate behavior or proof properties of the circuit. This section
 gives a brief overview of the \hs{Grid}-Arrow that can be used to generate VHDL code or to simulate a circuit.
@@ -136,29 +134,27 @@ tuple. The arrow resides in the first, the graph occupies the second part of the
 \begin{haskell}
   newtype Grid a b c = GR (a b c, CircuitDescriptor)
 \end{haskell} 
-Alongside with the arrow execution, the generated Netlist is stored inside the graph like data structure called a
-\hs{CircuitDescriptor}.  The name Grid is analog chosen to the snap circuit toys from childhood, where one also could combine
-hardware elements arbitrary. The Grid type is a surface where hardware elements can be combined with each other to compose new
-structures and analyze them. But it is not only the surface to combine hardware components, it's also a recursive surface. So it
-is used as hardware component itself which means a \hs{Grid} is an arrow on its own.
+Alongside with the arrow execution, the generated Netlist is stored inside graph structure called a \hs{CircuitDescriptor}.  The
+name Grid is analog chosen to the snap circuit toys from childhood, where one also could combine hardware elements arbitrary. The
+Grid type is a surface where hardware elements can be combined with each other to compose new structures and analyze them. It is
+not only the surface to combine hardware components, it's also recursive. So it is used as hardware component itself which means a
+\hs{Grid} is an arrow on its own.
 
 
 \subsection{Circuit-Descriptor}
-The descriptive part of the arrow is called a \hs{CircuitDescriptor}. Something of type \hs{CircuitDescriptor}, like the name
-suggests, describes a circuit in detail. The combination sequence of the hardware parts, the pin layout, their cabling structure
-and also recursively all subcomponents are represented inside the \hs{CircuitDescriptor}. A circuit with such a descriptor has
-enough detail to be expressed as a Netlist.
+The descriptive part of the arrow is called a \hs{CircuitDescriptor}, and describes a circuit in detail. The combination sequence
+of the hardware parts, the pin layout, their cabling structure and also recursively the subcomponents are represented inside the
+\hs{CircuitDescriptor}. A circuit with such a descriptor alongside has enough details to be expressed as a Netlist.
 
 \par
-The actual data type is divided into three\footnote{actually four, because the empty descriptor requires it's own} unique
-descriptors:
+There are three distinct forms of circuits:
 \begin{itemize}
-\item \emph{Combinatorial:} are the parts of a circuit that are describable without a clock or buffered data. For example all
-  Boolean logic gates fall into this category.
+\item \emph{Combinatorial:} are the parts of a circuit that are describable without a clock or buffered data. Boolean logic gates
+  or deterministic finite automata are in this category.
 \item \emph{Register:} A register is used to describe the storage of data on the one hand and is used to clock computations on the
-  other hand. The implementation of a register highly depends on the target platform. There is no need to know it's details at
+  other hand. The implementation of a register highly depends on the target platform. There is no need to know the details at
   this point.
-\item \emph{Loop:} Those Hardware components that are referring onto them self are handled in the looping section.
+\item \emph{Loop:} Hardware components that are referring onto them self are handled in the looping section.
 \end{itemize}
 
 \begin{haskell}
@@ -186,9 +182,10 @@ descriptors:
   type Netlist = CircuitDescriptor
 \end{haskell} 
 
-The \hs{MkCombinatorial} and the \hs{MkLoop} parts reveal a classic functional graph structure that is build from two lists. One
-containing the edges (\hs{edges :: [Edge]}) and the other containing the nodes (\hs{nodes :: [CircuitDescriptor]}).  Additionally
-there are information that are equal for every circuit and are stored inside the (\hs{nodeDesc :: NodeDescriptor}) with the graph. At last, information about the hardware's performance (space and time) is stored alongside with the graph.
+The \hs{MkCombinatorial} and the \hs{MkLoop} parts reveal a functional graph structure that is build from two lists. One
+containing the edges and another one containing nodes. Additionally there are equal information for every circuit. They are stored
+inside the \hs{NodeDescriptor} with the graph. At last, information about the hardware's performance (space and
+time) is stored alongside with the graph.
 \begin{haskell}
   data NodeDescriptor
     = MkNode
@@ -202,54 +199,49 @@ there are information that are equal for every circuit and are stored inside the
 % Each node itself is a \hs{CircuitDescriptor} and contains a list of \hs{CircuitDescriptor}s, so each node could be described
 % recursively, which suits hardware very well.
 
-A general problem with such data structures is, they do describe a graph but they don't enforce to build a correct one. In such
-cases it's common to supply \hs{smart constructor}s along with the data type. These constructors are functions that take all the
-elements the actual \hs{CircuitDescriptor} exists of. Than they check the inputs against given constraints and only generate the
-output if the input fulfills them. In that way it's assured that only valid hardware components are constructed.
+To avoid corrupted data types, smart constructors are used. They ensure correct formed graphs by checking the incoming data
+against given constraints and then generate only valid graphs. For example the combinatorial section only accepts non looping
+connections.
 
 \par
-For example the combinatorial section only accepts non looping connections. A wire is a connection between two \hs{Pins} of one or
-two hardware components. The output pin is called the source and the input pin is called the sink of a component. Our approach enforces that every component on a Grid is wired up. 
-\begin{haskell}
-  type Anchor       = (Maybe CompID, PinID)
-\end{haskell}
-The outer most grid can't be wired up as it represents a not yet placed piece of hardware. This is mirrored by the \hs{Maybe
-  CompID} in the type of an anchor. \xfig[.9]{ic-pin.pspdftex}{Image of IC {\tiny (by Sergei Frolov)}}{img:ic-with-pin}
+A wire is a connection between \hs{Pins} of one or
+two hardware components. The output is called the source and the input is called the sink of a component. 
+
 
 \subsection{Lists through Tuples}
-The Haskell arrow interface is build upon tuples and therefore prefers them. Circuits come often with a list like interface so we
-model them with tuples. There are operators, like binary logic operators, that perfectly match the tuple structure. In example,
-component $C_0$ produces the outputs $s_0, s_1, s_2, s_3$. Another component $C_1$ processes $s_0$ and $s_2$; $C_2$ acts on $s_1$
-and $s_3$. The process of restructuring the output of one function into an input to another function is called retuple'ing because
-it is only possible to change the way data is tupled into each other. As example a function that does such tuple'ing is \hs{mvRight}. This one takes an argument of the structure \((x,(y,z))\) to a different structure \((y,(x,z))\).
+The Haskell arrow interface is build from tuples. Circuits come often with a list like interface. There are operators like in
+binary logic that perfectly match the tuple structure, but in most cases the list interface is needed. Circuits ofte come with a
+list like interface and therefore we modell this throug tuples. The process of restructuring the output of one function into the
+input to another function is called retuple'ing. A function that does such tuple'ing is \hs{aFloatR}. This one takes an argument
+of the structure \((x,(y,z))\) to a different structure \((y,(x,z))\).
 
 \begin{haskell}
-mvRight :: (Arrow a) => Grid a (my, (b, rst)) (b, (my, rst))
-mvRight           -- aFloatR
+aFloatR :: (Arrow a) => Grid a (my, (b, rst)) (b, (my, rst))
+aFloatR           
   =   aDistr      -- aDistr : is that really aDistr?
   >>> first aSnd
 \end{haskell} 
 
 There are two arrows involved here, \hs{aDistr} and \hs{aSnd}. With \hs{aDistr} the first element is distributed over the second
-one and with \hs{first aSnd} the first occurrence is dropped. The \hs{mvRight} arrow floats the first element one position to the
-right. Of curse this arrow assumes a structure where always the first element of a tuple is a value, the second is another tuple:
-\((v_1, (v_2, (v_3, (v_4, v_5, (\dots)))))\)
+one and with \hs{first aSnd} the first occurrence is dropped. The \hs{aFloatR} arrow moves the first element one position to the
+right. Of curse this arrow assumes a structure where the first element of a tuple is a value, the second is another tuple: \((v_1,
+(v_2, (v_3, (v_4, v_5, (\dots)))))\)
 
 \par
 A common task over the list like tuples is to apply an arrow to the front and than concentrate the remaining calculation on the
-remaining inner structure. For this purpose the operator \hs{>:>} helps to clarify the code that describes such computations.
+inner structure. For this purpose the operator \hs{>:>} helps to clarify the code that describes such computations.
 \begin{haskell}
   aA >:> aB = aA >>> (second aB)
 \end{haskell} 
 
-The operator \hs{>:>} is based on the \hs{>>>} operator with a difference. The first supplied arrow is executed over the whole
-input data tuple, while the second one is applied only to the second part of the tuple. Such an operator comes handy as long list
-like tuple structures are used and are processed from the left.
+The operator \hs{>:>} is a special case of the \hs{>>>} operator. The first supplied arrow is executed over the whole input, while
+the second one is applied to only the second part. Such an operator comes handy as long tuple structures are used and are
+processed from the left.
 
 \par
-While working with tuple lists, it is often needed to reorder the parenthesis around the data so that selector functions like
-\hs{first} process the right data. The two arrows \hs{a\_xXX2XXs} and \hs{a\_XXx2xXX} exploit the associative law of arrows. The
-cryptic names mirror the changing structure, upper case letters show the grouped position.
+While working with tuple lists, it is needed to reorder the parenthesis around the data so that selector functions like \hs{first}
+process the right data. This is done by the two arrows \hs{a\_xXX2XXs} and \hs{a\_XXx2xXX} that exploit the associative law of
+arrows. The names mirror the changing paranthesis structure, upper case letters show the grouped position.
 \begin{align*}
   \text{a\_xXX2XXx} &: (a, (b, c)) \rightarrow ((a, b), c) \\
   \text{a\_XXx2xXX} &: ((a, b), c) \rightarrow (a, (b, c))
@@ -257,37 +249,36 @@ cryptic names mirror the changing structure, upper case letters show the grouped
 
 
 
-\section{First Approach: Classical Arrows}
-Within this section we present a cycle redundancy check algorithm, implemented with the design method of arrows. Later on it's
-shown how the netlist is generated. The section concludes with the problems of this arrow approach.
+\section{Classical Arrows Hardware Development}
+Within this section we present a cycle redundancy check algorithm, implemented with arrows. Later on it's shown how netlists are
+generated. The section concludes by highlighting some of the problems with this approach.
 
 \subsection{CRC - Implementation}
 A CRC - cycle redundancy check - is a method to calculate checksums of data. The calculation of a CRC is based upon a polynomial
 division, where the reminder is the CRC. Our approach calculates the CRC with a functional galois type shift register.
 
 \par
-The shift register is modeled with a list type and the positions of the feedback. The list is simulated by tuples and therefore
-the feedback value is feed back into the list with the \hs{mvRight} arrow.
+The shift register is modeled from a list and the positions of where to feedback. The list is simulated by tuples and therefore
+the feedback value is feed back into the list by the \hs{aFloatR} arrow.
 
 \par
-Different feedback positions are captured in multiple arrows called \hs{toInner$_n$}. 
-%Different feedback positions are captured in multiple arrows called \hs{feedbackk$_n$}. 
+Different feedback positions are captured in multiple arrows called \hs{aFeedback$_n$}. 
 
 \begin{haskell}
-toInner5       -- feedback5
-  =   mvRight
-  >:> mvRight
-  >:> mvRight
-  >:> mvRight
+aFeedback5
+  =   aFloatR
+  >:> aFloatR
+  >:> aFloatR
+  >:> aFloatR
   >:> aFlip
 \end{haskell} 
 
 % TODO : aCRC8
-The principle behind a $n$-Bit CRC is captured in the arrow \hs{crc\_checksum\_8} 
+The principle behind every CRC is captured in the arrow \hs{crc\_checksum\_8} 
 \begin{haskell}
 crc_checksum_8 crc_polynom polySkip padding start rest --------------------REVIEW
   =   (padding &&& aId)
-  >>> toInner8
+  >>> aFeedback8
 
   >>> (start &&& rest)
   >>> first (crc_polynom)
@@ -311,38 +302,34 @@ crc_checksum_8 crc_polynom polySkip padding start rest --------------------REVIE
                  )   
 \end{haskell} 
 
-The CRC calculation is preceeded by the alignment of the input data. Therefore the padding bits, that are $0$ for CRC calculation, are floated to the right end of the tuple list.
+The CRC input data are alignet and the padding bits are floated to the right end of the tuple list.
 \[((p_0, p_1), (b_0, (b_1, (b_2, (b_3, b_4))))) \rightarrow (b_0, (b_1, (b_2, (b_3, (b_4, (p_0, p_1))))))\]
 
-Afterwards the arrow abstracts the steps to calculate a CRC sum. The combined action \hs{(start &&& rest)} splits the input data
-into the bits that fill the Galois shift register (the \hs{start} part) and the remaining bits (the \hs{rest} part). Keep in mind
-that the \hs{&&&} operator first duplicates its input. The starting bits are then fed into the shift register via the \hs{first
-  (crc\_polynom)}. Step by step all bits are consumed. The last step is executed without the need of a \hs{first} selector.
-Therefore the arrow ends with a \hs{aFlip >>> polySkip >>> crc\_polynom} expression.
+After that, the arrow is an abstract representation of the CRC calculation. By parameterising over \hs{crc_checksum_8}, every
+concrete CRC algorithm can be constructed. Due to Haskells inability to dynamicaly change the count of certain expressions in the
+function body, our example is limited to 8Bit.
 
 
-\subsection{Simple Example}
-Every CRC-Code is equipped with a polynomial that especially fits the needs of the domain. In the example the CRC-Code for USB is
-shown. The polynomial are:
+\subsection{Example}
+A CRC-Code is equipped with a polynomial that especially fits the needs of the domain. This example shows the CRC-Code for USB. With the polynomial:
 \[
   \text{USB} : x^5 + x^2 + 1 
 \]
-
-
-The polynomial describe at which positions the input bit is \hs{xor}'ed with the bit that has traveled through the shift
+ 
+The polynomial describes which positions are feed back and are \hs{xor}'ed with the bit that has traveled through the shift
 register. For the USB CRC $\text{bit}_0$ and $\text{bit}_2$ are \hs{xor}'ed with $\text{bit}_5$.
 
 \xfig[.5]{CRC-USB}{USB CRC}{fig:usb-crc}
 
-To summarize this for the USB CRC, the highest exponent is $5$. This means, that:
-% TODO : Namings toInner ... feedback usw. ... 
+To summarize this for the USB CRC, the highest exponent is $5$. Therefore:
+% TODO : Namings aFeedback ... feedback usw. ... 
 \begin{itemize}
-  \item the \hs{polySkip} needs to be \hs{toInner5}
+  \item the \hs{polySkip} needs to be \hs{aFeedback5}
   \item there are $5$ \hs{padding} bits \hs{aConst (False, (False, (False, (False, False))))} 
   \item the split between \hs{start} and \hs{rest} is after bit $5$
 \end{itemize}
 
-This results in the definition of the USB CRC:
+
 % \begin{haskell}
 % crc_checksum_ccit_8 
 %   :: Arrow a => Grid a 
@@ -351,7 +338,7 @@ This results in the definition of the USB CRC:
 % crc_checksum_ccit_8
 %   = crc_checksum_8   
 %       crc_polynom_ccit
-%       toInner4
+%       aFeedback4
 %       (aConst (False, (False, (False, False))))
 %       (second.second.second.second $ aFst)
 %       (aSnd >>> aSnd >>> aSnd >>> aSnd >>> aSnd)
@@ -401,17 +388,16 @@ data StructGraph
 
 
 \subsection{Drawbacks}
-This approach has two problems, that are visible in the CRC example. All input data of these hardware components must fit into
-tuples. Simple logic gates fit well into this scheme. For hardware components with more than two pins data structures like lists
-are needed. It can be simulated with tuples as it is done in the above CRC example. But the simulation comes at a cost.  A big
-part of the code is needed only for restructuring the tuples. This process becomes tedious, confusing and error prone, if bigger
-real world hardware components are be modeled. Think about 32 or even 64-Bit ALU's
+This approach has problems, that are visible in the CRC example. The input data of these hardware components must fit into
+tuples. Logic gates fit well into this scheme, but for hardware components with more than two pins data structures like lists are
+needed. Lists can be simulated with tuples as it is done in the above example. But the simulation comes at a cost. A big part of
+the code only restructures the tuples. This process becomes tedious, confusing and error prone. At least if bigger real world
+hardware components are be modeled. Think about 32 or even 64-Bit ALU's.
 
 \par
-The tedious tuple code could be avoided by the use of Patterson's proc-notation for
-arrows\cite{PatersonNewNotation}.  The proc-notation abstracts the tuple code and the hardware can be described more
-``visually'' in the source. But it's just syntactic sugar, underneath there are still tuples in use.  The
-following code shows how the USB CRC can be modeled with the proc-notation:
+The tedious tuple code could be avoided by using Patterson's proc-notation for arrows\cite{PatersonNewNotation}.  The
+proc-notation abstracts the tuples to named variables. The hardware can be described more ``visually'' in the source. But this is
+just syntactic sugar, there are still tuples in use. The following code shows how the USB CRC is modeled with the proc-notation:
 \begin{haskell}
 ------------------------------------------------ REVIEW wrong function
 crc_polynom_ccit 
@@ -424,15 +410,15 @@ crc_polynom_ccit
 \end{haskell} 
 
 \par
-The second problem affects the notation that comes from the auto generated arrow code. Patterson's notation heavily uses the
-\hs{arr} function. Because it is possible to ``lift'' any function passed to \hs{arr} into an arrow, it is impossible to keep
-track of the type of that function. The type information of the passed function is needed to generate a proper component. These
-information like the pin count are codified in the type of the lifted function. This makes it possible to generate component
-arrows ad-hoc. Nonetheless a proper name to that function is missing in every case.
+The second problem affects the resulting auto generated arrow code. Patterson's notation heavily uses the \hs{arr}
+function. Because it is possible to ``lift'' any function passed to \hs{arr} into an arrow, it is impossible to keep track of that
+outcoming function type. The type information of the passed function is needed to generate a proper component. This makes it
+possible to generate component arrows ad-hoc. Nonetheless a proper name to that function is missing in every case.
 
 
 \section{Coping with the Tupel-Problem - ``Vector-Arrows''}
-Arrows match hardware pretty good if it is binary in their in- and output. In this section we show how to overcome the problems with $n$-ary ($n > 2$) hardware components. 
+Arrows match binary hardware pretty good. In this section we show howto overcome the problems with $n$-ary ($n > 2$) hardware
+components.
 
 % TODO : wo passt dieser satz? 
 % So arrows are an adequate abstract form to describe hardware, they are modular and they come with an enhanced type system that
@@ -440,25 +426,25 @@ Arrows match hardware pretty good if it is binary in their in- and output. In th
 % the tuples.
 
 \par
-The reason for the arrows preference of binary circuits are the underlying tuples. And also the tuples allow the in- and output to
-be of any kind. In the digital world, hardware transmits nearly always boolean values. Integers are transmitted via bundled
-boolean values. The developers of Sensors try to digitize pretty early in their design process. \cite{MakinwaSmartSensor}
+The reason for the arrows preference of binary circuits is it's tuple structure. Also the tuples allow the in- and output to be of
+any kind. In the digital world, hardware transmits nearly always Boolean values and also integers are transmitted via bundled
+Boolean values. And even the developers of Sensors try to digitize pretty early in their design process. \cite{MakinwaSmartSensor}
 
 \par
-Therefore the type \hs{a b c} is too general for a logic gate: the type of the in going data should match the type of the out
+Therefore the type \hs{a b c} is far too general for a logic gate: the type of the in going data should match the type of the out
 coming values. Secondly, a set of wires is not a tuple and for instance, the tuple \hs{(a,(b,(c,d)))} represents the same set of
 wires as the tuple \hs{(a,((b,c),d))}. The number of possible -- different with respect to syntax and type -- representations of a
 set of wires exponentially explodes with a growing number of wires that we are trying to model.
 
 \par
-These properties constrain hardware to be static in their type of values and dynamic in their amount of values. Arrows in contrast
-are dynamic in the type of values but are static in their amount of the values. So arrows are opposing the hardware's nature
-here. It is possible to transform arrows so that they match hardware more naturally, without loosing the beneficial properties for
-hardware design.
+The type that would be ideal for hardware development is something that is static in their types but is dynamic in the length.
+Arrows in contrast are dynamic in the type but are static in their amount of the values. So arrows are opposing the hardware's
+nature here. It is possible to transform arrows so that they match hardware more naturally, without loosing the beneficial
+properties for hardware design.
 
 \par
-A vector fulfills the desired hardware behavior. The vector $Vec_n^b$ is a vector of $n$ values over the type $b$. In the
-following we sketch different ways to express such ``Vector-Arrows'' present different approaches. 
+A vector fulfills the desired type needs of the hardware behavior. The vector $Vec_n^b$ is one of $n$ values over the type $b$. In
+the following we sketch different ways to express such ``Vector-Arrows'' and present different approaches.
 
 \begin{haskell}
 ------------------------------------------------REVIEW only one example ? 
@@ -473,9 +459,9 @@ class VArrow a where
 
 
 \subsection{Horn-like-clause Solution}
-As vectors are not a purely functional data structure the first approach would be to define a list data type that is limited in
-length. It is necessary to introduce a counter, into the data type. We choose type level natural numbers to restrict the list in
-length.
+As vectors are not a purely functional data structure and lists come pretty close to them the first approach would be to constrain
+a list data type in length. It is necessary to introduce a counter, into the data type. We choose type level natural numbers to
+restrict the list in length.
 % TODO, cite richtig platzieren
 \cite{kiselyov:strong_collections}
 \begin{haskell}
@@ -484,68 +470,67 @@ data Vec n a where
   (:.) :: a -> Vec n a -> Vec ('VSucc n) a -- (@$a \rightarrow Vec_n^a \rightarrow Vec_{n+1}^a$@)
 \end{haskell} 
 
-The type level natural numbers are introduced as peano numbers. This is similar to the mechanism shown by Kiselyov et al
+The type level numbers are introduced as peano numbers. This is similar to the mechanism shown by Kiselyov et al
 \cite{kiselyov:strong_collections}.
 
 \par
-The arrow class functions \hs{arr}, \hs{first}, \hs{second}, \hs{(***)} and \hs{(&&&)} are translated into their vectorised
-versions. \hs{arr} takes a Haskell function into an arrow that expects a vector of $n$ $b$'s ($Vec_n^b$) into a new vector of
-$b$'s of length $m$ ($Vec_m^b$). The sequential concatenation of arrows is done by the \hs{(>^>)} operator.\hs{first} translates
-an arrow into another one, that takes it's input from the front element of a tuple. \hs{second} does the same thing, but with the
-second element of that tuple. So these two functions are uniquely based upon the tuple. With vector arrows there are no tuples,
-and therefore there is no way to differentiate a first value from a second one.
+\hs{arr} takes a Haskell function into an arrow that expects a vector of $n$ $b$'s ($Vec_n^b$) into a new vector of $b$'s with
+length $m$ ($Vec_m^b$). The sequential concatenation of arrows is done by the \hs{(>^>)} operator. \hs{firsts} translates an arrow
+into another one, that takes it's input from the front element of a tuple. \hs{second} does the same thing, but with the second
+element of that tuple. So these two functions are uniquely based upon the tuple. With vector arrows there are no tuples, and
+therefore there is no way to differentiate a first value from a second one at the moment. 
 
 \par
-As Haskell is statically typed, everything in the data type is declared. Therefore all variables that hold type level natural
-numbers must be defined in the data type context. If type level integers are added, a type class \hs{VAdd} is listed in the type
-context. Working with such contexts reminds of Prolog's Horn Clauses programming style. Combined the arrow class for vector arrows
-looks like the following:
+As Haskell is statically typed, everything in the data type is declared. All variables that hold type level numbers must be
+defined in the data type context. If such type level numbers are added, a type class \hs{VAdd} must be listed in the type
+context. Working with this contexts reminds of Prolog's Horn Clauses programming style. 
+% The arrow class for vector arrows looks like the following:
 
-\begin{haskell}
-  class (Category a) => VArrow a where
-    arr    :: (VNat n)  
-           => (Vec n b -> Vec n b) -> a (Vec n b) (Vec n b)
-
-
-    init   :: ( VNat n, VNat m
-              , VAdd n m nm
-              , VEq (VSucc n) nm VTrue
-              )   
-           => a (Vec n b) (Vec m b) -> (Vec nm b) (Vec nm b) -> a (Vec n b) (Vec n b)
-
-    tail   :: ( VNat n, VNat m
-              , VAdd n m nm
-              , VEq nm (VSucc m) VTrue
-              )   
-           => a (Vec nm b) (Vec nm b) -> a (Vec m b) (Vec m b)
-
-    tail'  :: ( VNat m ) 
-           => a (Vec (VSucc m) b) (Vec (VSucc m) b) -> a (Vec m b) (Vec m b)
-
-    head   :: ( VNat n, VNat m
-              , VAdd n m nm
-              , VEq nm (VSucc m) VTrue
-              )   
-           => a (Vec nm b) (Vec nm b) -> a (Vec n b) (Vec n b)
-
-    last   :: ( VNat n, VNat m
-              , VAdd n m nm
-              , VEq (VSucc n) nm VTrue
-              )   
-           => a (Vec nm b) (Vec nm b) -> a (Vec m b) (Vec m b)
+% \begin{haskell}
+%   class (Category a) => VArrow a where
+%     arr    :: (VNat n)  
+%            => (Vec n b -> Vec n b) -> a (Vec n b) (Vec n b)
 
 
-    (***)  :: (VNat n, VNat m, VAdd n m nm) 
-           => a (Vec n b) (Vec n b) -> a (Vec m b) (Vec m b) -> a (Vec nm b) (Vec nm b)
+%     init   :: ( VNat n, VNat m
+%               , VAdd n m nm
+%               , VEq (VSucc n) nm VTrue
+%               )   
+%            => a (Vec n b) (Vec m b) -> (Vec nm b) (Vec nm b) -> a (Vec n b) (Vec n b)
 
-    (&&&)  :: (VNat n, VAdd n n nn) 
-           => a (Vec n b) (Vec n b) -> a (Vec n b) (Vec n b) -> a (Vec n b) (Vec nn b)
-\end{haskell}
+%     tail   :: ( VNat n, VNat m
+%               , VAdd n m nm
+%               , VEq nm (VSucc m) VTrue
+%               )   
+%            => a (Vec nm b) (Vec nm b) -> a (Vec m b) (Vec m b)
+
+%     tail'  :: ( VNat m ) 
+%            => a (Vec (VSucc m) b) (Vec (VSucc m) b) -> a (Vec m b) (Vec m b)
+
+%     head   :: ( VNat n, VNat m
+%               , VAdd n m nm
+%               , VEq nm (VSucc m) VTrue
+%               )   
+%            => a (Vec nm b) (Vec nm b) -> a (Vec n b) (Vec n b)
+
+%     last   :: ( VNat n, VNat m
+%               , VAdd n m nm
+%               , VEq (VSucc n) nm VTrue
+%               )   
+%            => a (Vec nm b) (Vec nm b) -> a (Vec m b) (Vec m b)
+
+
+%     (***)  :: (VNat n, VNat m, VAdd n m nm) 
+%            => a (Vec n b) (Vec n b) -> a (Vec m b) (Vec m b) -> a (Vec nm b) (Vec nm b)
+
+%     (&&&)  :: (VNat n, VAdd n n nn) 
+%            => a (Vec n b) (Vec n b) -> a (Vec n b) (Vec n b) -> a (Vec n b) (Vec nn b)
+% \end{haskell}
 
 \par
-The classic arrow class gives a default definition for the \hs{(***)} operator. \hs{(***)} is defined via \hs{first} and
-\hs{second}. With the Horn's like arrow class there is nothing like a \hs{second} arrow and therefore it's not possible to define
-\hs{(***)} in the standard way. The problem rises with an inability to define a correct split function. 
+The classic arrow class gives a default definition for the \hs{(***)} operator, where \hs{(***)} is defined via \hs{first} and
+\hs{second}. With this arrow class there is nothing like a \hs{second} arrow and therefore it's not possible to define
+\hs{(***)} in the standard way. The problem rises with an inability to define a correct split function.
 
 \par
 It is possible to divide the list just at the ``right spot'', once an arrow is known. \hs{first f} splits the input
@@ -559,9 +544,9 @@ Booleans to one, \hs{first} applied to \hs{aXor} must be an arrow from at least 
   first (aXor) :: (VNat k, VAdd (VSucc (VSucc VZero)) k nk, VAdd (VSucc VZero) k mk)
                => a (Vec ((VSucc (VSucc VZero)) + k) Bool) (Vec ((VSucc VZero) + k) Bool
 \end{haskell} 
-$2+k$ is the length of the input vector. The output is a vector of length $1+k$. This unsugared syntax actually is a major
-drawback.  It is not possible to write $2+k$ instead one needs to add \hs{VAdd (VSucc (VSucc VZero)) k nk} as context to the data
-type. This might be tedious for easy arrows, it becomes an error source for larger ones.
+This unsugared syntax is actually a major drawback. It is not possible to write just $2+k$ instead one needs to add \hs{VAdd
+  (VSucc (VSucc VZero)) k nk} as context to the data type. This might only be tedious for easy arrows, it becomes an major error
+source for larger ones.
 
 
 \subsection{Type-Family Solutions}
@@ -572,7 +557,7 @@ extension that comes in handy for this task.
 A type family in a way enables to calculate the type constructor of a data type. A feature the horn-clause solution lacks. The
 length of the vector is stored in a peano number. As peano numbers are expressed as a bunch of type constructors, type families
 are used to calculate the constructor amount. The Haskell-Wiki describes this vividly: A type family is to a data type, what the
-method of a type class is to a function. As the earlier solution showed, the addition is one operator that is needed.
+method of a type class is to a function.
 
 \begin{haskell}
 type family (n::VNat)   :+ (m::VNat) :: VNat
@@ -580,11 +565,8 @@ type instance VZero     :+ m     = m
 type instance VSucc n   :+ m     = VSucc (n :+ m)
 \end{haskell}
 
-The first Line defines the type family. The operator \hs{:+} needs to operate on peano numbers. The following two lines define the
-addition function in a straight forward way.
-
-\par
-With the addition type family the arrow could be defined more similar to the original type class.
+The first Line defines the type family, with an operator \hs{:+} that operates on peano numbers.  With the addition type family
+the arrow could be defined more similar to the original type class.
 \begin{haskell}
 class Category a => VArrow a where
   arr     :: (Vec n b -> Vec m b)
@@ -618,13 +600,13 @@ A dependently typed programming language is a language, that mixes expressions w
 types within that same language. 
 
 \par
-In summary the previous solutions all try to fix a unitary problem. And this problem depends on the fact that vectors aren't a
-purely functional data structure. A vectors length must show up in it's data type so that a function can match against it.
+In summary the previous solutions all try to fix a unitary problem. And this problem depends on the fact that vectors aren't
+purely functional. A vectors length must show up in it's data type so that a function can match against it.
 
 \par
-The transfer of tuple arrows to vector arrows changes the inner data type of arrows. Therefore the projection maps from the inner
-data type must translate to the vector version. \hs{first} and \hs{second} exactly match the tuple projection maps in Haskell,
-namely \hs{fst} and \hs{snd}.
+The transfer of tuple arrows to vector arrows changes the inner data structure of arrows. Therefore the projection maps from the
+inner data type must translate to the vector version. \hs{first} and \hs{second} exactly match the tuple projection maps in
+Haskell, namely \hs{fst} and \hs{snd}.
 
 \par 
 With vectors the \hs{first} statement is straight forward defined. The \hs{second} expression is the head-scratcher.  The
@@ -634,28 +616,23 @@ applying the function to the reminder. It can also be done via reversing the vec
 to the front of the vector.
 
 \par
-This makes it obvious, that the naming (\hs{first} and \hs{second}) for vectors is at least counter intuitive. For example an
-\hs{second aSwitch} arrow applied to a vector $(1, 2, 3, 4, 5)$ evaluates to $(1, 2, 3, 5, 4)$. We propose a more accurate name to
-the \hs{second} statement for vector arrows, namely \hs{last}.
-
-\par 
-While \hs{aSwitch} is of type $Vec_n^{Int}$, the expression \hs{last aSwitch} must be of type $Vec_{k+n}^{Int}, k \ge 0$. This is
-hard to express in a functional language, in a dependently typed language this is expressible by the data type.
+While \hs{aSwitch} is of type $Vec_n^{Int}$, the expression \hs{seconds aSwitch} must be of type $Vec_{k+n}^{Int}, k \ge 0$. This
+is hard to express in a functional data type. In a dependent language this is easily expressible by the data type.
 
 \par
 There are multiple languages with dependent types out there. The one with a pretty good connection to Haskell is Agda. The
-following describes the arrow class in a functional language with dependent types.
+following describes the arrow class in Agda with dependent types.
 
 
 \begin{haskell}
 record VArrow (_~~>_ : Set -> Set → Set) : Set₁ where 
   field
-    arr    : forall {B n m}     -> (Vec B n -> Vec B m) -> (Vec B n) ~~> (Vec B m)
-    firsts : forall {B n m k}   -> Vec B n ~~> Vec B m -> Vec B (n + k) ~~> Vec B (m + k)    
-    lasts  : forall {B n m k}   -> Vec B n ~~> Vec B m -> Vec B (n + k) ~~> Vec B (m + k) 
-    _>>>_  : forall {B n m k}   -> Vec B n ~~> Vec B m -> Vec B m ~~> Vec B k -> Vec B n ~~> Vec B k
-    _***_  : forall {B n m k j} -> Vec B n ~~> Vec B m -> Vec B k ~~> Vec B j -> Vec B (n + k) ~~> Vec B (m + j)
-    _&&&_  : forall {B n m k}   -> Vec B n ~~> Vec B m -> Vec B n ~~> Vec B k -> Vec B n ~~> Vec B (m + k) 
+    arr     : forall {B n m}     -> (Vec B n -> Vec B m) -> (Vec B n) ~~> (Vec B m)
+    firsts  : forall {B n m k}   -> Vec B n ~~> Vec B m -> Vec B (n + k) ~~> Vec B (m + k)    
+    seconds : forall {B n m k}   -> Vec B n ~~> Vec B m -> Vec B (n + k) ~~> Vec B (m + k) 
+    _>>>_   : forall {B n m k}   -> Vec B n ~~> Vec B m -> Vec B m ~~> Vec B k -> Vec B n ~~> Vec B k
+    _***_   : forall {B n m k j} -> Vec B n ~~> Vec B m -> Vec B k ~~> Vec B j -> Vec B (n + k) ~~> Vec B (m + j)
+    _&&&_   : forall {B n m k}   -> Vec B n ~~> Vec B m -> Vec B n ~~> Vec B k -> Vec B n ~~> Vec B (m + k) 
   infixr 2 _>>>_
   infixr 2 _***_
   infixr 2 _&&&_
