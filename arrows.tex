@@ -128,6 +128,7 @@ generation of typical HDL code like VHDL. They can be used to simulate behavior 
 gives a brief overview of the \hs{Grid}-Arrow that can be used to generate VHDL code or to simulate a circuit.
 
 \subsection{Grid-Arrow}
+\label{subsect:grid}
 The \hs{Grid}-Arrow is a combination of an executable arrow and a descriptive hardware component part. In a first approach one can
 imagine the descriptive part to live inside the arrow. But that does not work out, so they are stored equal to each other inside a
 tuple. The arrow resides in the first, the graph occupies the second part of the tuple.
@@ -345,47 +346,33 @@ To summarize this for the USB CRC, the highest exponent is $5$. Therefore:
 % \end{haskell} % $ to fix that syntax highlighting problem 
 
 
-\subsection{Building Netlists}
-The data type of the previous CRC function denotes a \hs{Grid} arrow. A graph is a different form of a Netlist. Hardware
-components and Pins are identified integer id's.
-\begin{haskell}
-type CompID = Int
-type PinID  = Int
-\end{haskell}
+\subsection{Building Netlist-Graphs}
+With a netlist being an universal description of the hardware circuits it is our goal to convert the hardware describing arrow
+into one. 
 
 \par
-An edge represents a wire between two pins and is identified by an AnchorPoint, the tuple \hs{Just
-  CompID}$\times$\hs{PinID}. Unconnected anchor points are the one that go into a component, called \hs{SinkAnchor} as well as one
-that comes from a component, the \hs{SourceAnchor}. They do not have a \hs{CompID}, their tuple is
-(\hs{Nothing}$\times$\hs{PinID}). This maps to the real world, where unplaced components have pins from and to nowhere.
+The execution of the described functions produce a \hs{Grid} arrow as result. As stated in Section \ref{subsect:grid} a Grid
+consists of the arrow representing the behavior and the graph representing the structure that causes this behavior. Every
+component comes with a trivial graph containing only one node. That node describes the component in detail. 
 
-\begin{haskell}
-type AnchorPoint  = (Maybe CompID, PinID)
-type SinkAnchor   = AnchorPoint
-type SourceAnchor = AnchorPoint
-\end{haskell}
+\par
+The hardware components are combined with each other by arrow operators to generate new components with different
+behavior. Alongside with the combinations of the hardware a new describing graph is generated. This graph describes now, from what
+components the new one is build up. And it also describes how the single parts are interconnected.
 
-A wire between two \hs{AncorPoint}s of two components is an edge between two Nodes of the netlist graph.  
-\begin{haskell}
-data Edge 
-  = MkEdge { sourceInfo :: SourceAnchor
-           , sinkInfo   :: SinkAnchor }
-\end{haskell}
- 
-A node holds the information about the component. The name is used in the Netlist generator to identify entities. Each node holds
-a list of sub nodes that represent the recursive structure form which the node is assembled. They also hold the list of connected
-edges, as well as the list of in- and output pins.
+\par
+To interconnect two circuits into a new one, a function \hs{splice} is used. This function is abstract in the sense that it can
+splice two circuits together in different ways. They correspond to the arrow operations. For example graphs that are combined by
+\hs{(>>>)} are spliced with the \hs{seqRewire} method. The function connects the sources of circuit 1 with the sinks of circuit 2
+one by one. After that step all the remaining sinks of the two circuits are extracted into one list and all the remaining sources
+are extracted into another list. These two lists become the new sinks and sources of the generated component. To generate a proper
+graph of circuits one has to make sure, that all the identifiers inside the components are again unique. 
 
-\begin{haskell}
-data StructGraph
-  = MkSG { name    :: String
-         , compID  :: CompID
-         , nodes   :: [StructGraph]
-         , edges   :: [Edge]
-         , sinks   :: Pins
-         , sources :: Pins }   
-\end{haskell}
+\xfig[.5]{combine-components}{combine two components}{fig:combine}
 
+\par
+It turns out, that this graph in fact is a form of a netlist. Once the graph is created, it is straight forward to translate it
+into another netlist format (e.g. VHDL).
 
 \subsection{Drawbacks}
 This approach has problems, that are visible in the CRC example. The input data of these hardware components must fit into
