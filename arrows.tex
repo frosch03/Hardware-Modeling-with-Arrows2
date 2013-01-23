@@ -347,6 +347,41 @@ To summarize this for the USB CRC, the highest exponent is $5$. Therefore:
 
 
 \subsection{Building Netlist-Graphs}
+A Netlist is a data structure, that describes how an electronic component is build up. The supporting data structure is a graph
+that consists of multiple lists. One list contains all the singleton components where another list holds the connecting wires. 
+
+A wire connects two components, starting from the output pin of one component and ending at the input pin of another
+component. Every component is uniquely identified by an integer value. Besides the identifier, every component also has a
+descriptive name. This one is used to generate hardware describing code like VHDL which is a little easier to debug later on. The
+last essential describing part about the component are the list of in- and outgoing pins. 
+
+All this information are sub summed under the ``NodeDescriptor'' data type. Our NodeDescriptor distinguishes four types of
+components. One of them are the combinatorial components. They are defined without any form of clock in mind. It is possible to
+compute the result of such a component. Also one could substitute the conglomerate of combinatorial components by a single
+function f. 
+
+Multiple combinatorial components are combined to bigger components by a clocked register. The register has an input for a clock
+signal and therefore takes care of the clock synchronization. Between every two registers must be at least one combinatorial
+component.
+
+A register on its own is separate component that is also listed separate. The buildup of a register is not handled here. The
+register is defined per architecture so that a solution is a multi platform solution.
+
+The last type of components are the ones that refer onto themselves. They have a combinatorial core from which some wires point
+right back into the same component. So these wires have the same in- and output Id's. Of course such looping components are
+synchronized by a register in the loop.
+
+
+A wire is identified by 4 integer value Id's. Every Pin has one and also every component. Wires that come from the ``outside'' or
+that go ``out'' do not have a component there and therefore don't have a sink- and source Id. To also work with such cases, the
+component Id's are not only integers but \hs{Maybe Integer}. This has a direct translation into the real world, where components
+exist, that aren't built in yet. Exactly this components do have pin's which are connected to the gates but aren't soldered in
+yet.
+
+\subsection{Translate the Netlist into VHDL}
+
+%% --
+
 With a netlist being an universal description of the hardware circuits it is our goal to convert the hardware describing arrow
 into one. 
 
