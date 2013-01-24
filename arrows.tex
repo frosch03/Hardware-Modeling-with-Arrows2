@@ -379,11 +379,38 @@ exist, that aren't built in yet. Exactly this components do have pin's which are
 yet.
 
 \subsection{Translate the Netlist into VHDL}
-
-%% --
-
 With a netlist being an universal description of the hardware circuits it is our goal to convert the hardware describing arrow
-into one. 
+into one. Every HDL (hardware description language) comes with quirks that must be respected. To translate a netlist into a
+specific hdl like VHDL one considers the idiosyncrasy of VHDL. That are things like the header of a VHDL file, the components
+which are described within Entity's or the wires that are called portmaps in VHDL. To the outside, the translation process hides
+behind the ``showCircuit'' method.
+
+\par
+Functions that name single elements are named starting with ``name'' in the function name. VHDL quirks are represented by the
+functions that start with ``vhdl_''. At last there are the auxiliary functions for the remaining tasks. 
+
+\par
+The ``name''-Functions are needed to assign the different elements of the netlist a desired name. The information used to generate
+such names are extracted from the component description called the \hs{CircuitDescriptor}. These information are then collected
+into a temporary representation called a dictionary. The Id's of the components are bound together with the names of the
+components by \hs{zip}ing them. Consider the In- and Outputs: First of all, the \hs{PinID}s are combined with the default-names
+for input-wires; the same is done with output pins and output-wire names. This chunk of data is further combined with the
+component id's. The result is a component dictionary that contains for every pin a corresponding name.
+
+\par
+Specific VHDL quirks are taken care of by the ``vhdl_'' functions. This functions generate correct VHDL source code by looking at
+\hs{CircuitDescriptor}s. Nearly every ``vhdl_'' function takes one of the dictionary's as input to generate more reasonable
+names. Every element that is used in the VHDL context to depict a netlist, is produced e.g. by one of the functions ``Entity'',
+``Component'', ``Signal'' or ``Portmap''. A component in the VHDL sense is build from entity's. To generate a VHDL netlist, all
+the subnodes from the graph-view are taken. An entity is generated for every one of the subnodes. If all entity's are generated
+the VHDL component header is the big bracket around them. 
+
+\par
+To the outside only two functions remain view able. Both of them take something into a \hs{String}, one from a \hs{CircuitDescriptor} and the other one from an \hs{Edge}.
+
+
+
+%% ---------------------------------------------------------------------------------------------- %%
 
 \par
 The execution of the described functions produce a \hs{Grid} arrow as result. As stated in Section \ref{subsect:grid} a Grid
@@ -408,6 +435,8 @@ graph of circuits one has to make sure, that all the identifiers inside the comp
 \par
 It turns out, that this graph in fact is a form of a netlist. Once the graph is created, it is straight forward to translate it
 into another netlist format (e.g. VHDL).
+
+%% ---------------------------------------------------------------------------------------------- %%
 
 \subsection{Drawbacks}
 This approach has problems, that are visible in the CRC example. The input data of these hardware components must fit into
