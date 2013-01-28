@@ -509,7 +509,7 @@ class VArrow a where
 \end{haskell}
 
 
-\subsection{Horn-like-clause Solution}
+\subsection{Horn Clauses Solution}
 As vectors are not a purely functional data structure and lists come pretty close to them the first approach would be to constrain
 a list data type in length. It is necessary to introduce a counter, into the data type. We choose type level natural numbers to
 restrict the list in length.
@@ -517,76 +517,34 @@ restrict the list in length.
 \cite{kiselyov:strong_collections}
 \begin{haskell}
 data Vec n a where
-  T    :: Vec 'VZero a                           -- (@$Vec_0^a$@)
-  (:.) :: a -> Vec n a -> Vec ('VSucc n) a -- (@$a \rightarrow Vec_n^a \rightarrow Vec_{n+1}^a$@)
+  T    :: Vec VZero a                                     -- (@$Vec_0^a$@)
+  (:.) :: (VNat n) => a -> (Vec n a) -> (Vec (VSucc n) a) -- (@$a \rightarrow Vec_n^a \rightarrow Vec_{n+1}^a$@)
 \end{haskell} 
 
 The type level numbers are introduced as peano numbers. This is similar to the mechanism shown by Kiselyov et al
 \cite{kiselyov:strong_collections}.
 
 \par
-\hs{arr} takes a Haskell function into an arrow that expects a vector of $n$ $b$'s ($Vec_n^b$) into a new vector of $b$'s with
-length $m$ ($Vec_m^b$). The sequential concatenation of arrows is done by the \hs{(>^>)} operator. \hs{firsts} translates an arrow
-into another one, that takes it's input from the front element of a tuple. \hs{second} does the same thing, but with the second
-element of that tuple. So these two functions are uniquely based upon the tuple. With vector arrows there are no tuples, and
-therefore there is no way to differentiate a first value from a second one at the moment. 
+The \hs{Arrow}-Class of this GADT vector is defined similar to the classical arrow. \hs{firsts} translates an arrow into one that
+takes it's the first $n$ inputs from the front of the vector. \hs{second} takes the input in a analog way from the end. The
+Problem is to decide, where the ``end'' starts. 
+
+\par
+%%% Stimmt das hier?
+% * Auf type ebene nur Bools
+% * Nat's gehen nicht, weil die rekursion nicht definierbar ist
+% ** ansatzpunkt für die nächste lösung mit den type families
 
 \par
 As Haskell is statically typed, everything in the data type is declared. All variables that hold type level numbers must be
-defined in the data type context. If such type level numbers are added, a type class \hs{VAdd} must be listed in the type
-context. Working with this contexts reminds of Prolog's Horn Clauses programming style. 
-% The arrow class for vector arrows looks like the following:
-
-% \begin{haskell}
-%   class (Category a) => VArrow a where
-%     arr    :: (VNat n)  
-%            => (Vec n b -> Vec n b) -> a (Vec n b) (Vec n b)
-
-
-%     init   :: ( VNat n, VNat m
-%               , VAdd n m nm
-%               , VEq (VSucc n) nm VTrue
-%               )   
-%            => a (Vec n b) (Vec m b) -> (Vec nm b) (Vec nm b) -> a (Vec n b) (Vec n b)
-
-%     tail   :: ( VNat n, VNat m
-%               , VAdd n m nm
-%               , VEq nm (VSucc m) VTrue
-%               )   
-%            => a (Vec nm b) (Vec nm b) -> a (Vec m b) (Vec m b)
-
-%     tail'  :: ( VNat m ) 
-%            => a (Vec (VSucc m) b) (Vec (VSucc m) b) -> a (Vec m b) (Vec m b)
-
-%     head   :: ( VNat n, VNat m
-%               , VAdd n m nm
-%               , VEq nm (VSucc m) VTrue
-%               )   
-%            => a (Vec nm b) (Vec nm b) -> a (Vec n b) (Vec n b)
-
-%     last   :: ( VNat n, VNat m
-%               , VAdd n m nm
-%               , VEq (VSucc n) nm VTrue
-%               )   
-%            => a (Vec nm b) (Vec nm b) -> a (Vec m b) (Vec m b)
-
-
-%     (***)  :: (VNat n, VNat m, VAdd n m nm) 
-%            => a (Vec n b) (Vec n b) -> a (Vec m b) (Vec m b) -> a (Vec nm b) (Vec nm b)
-
-%     (&&&)  :: (VNat n, VAdd n n nn) 
-%            => a (Vec n b) (Vec n b) -> a (Vec n b) (Vec n b) -> a (Vec n b) (Vec nn b)
-% \end{haskell}
+defined in the data type context. To divide a vector in a \hs{first} and a \hs{second} half, one must calculate the peano number
+of the split position. This is done by type classes like \hs{VAdd}. They must be listed in the type context of the Vector. Working
+with this contexts reminds of Prolog's Horn Clauses programming style.
 
 \par
-The classic arrow class gives a default definition for the \hs{(***)} operator, where \hs{(***)} is defined via \hs{first} and
-\hs{second}. With this arrow class there is nothing like a \hs{second} arrow and therefore it's not possible to define
-\hs{(***)} in the standard way. The problem rises with an inability to define a correct split function.
-
-\par
-It is possible to divide the list just at the ``right spot'', once an arrow is known. \hs{first f} splits the input
-into one with exact the length that \hs{f} expects as input, and a rest vector. So with \hs{aXor} being an arrow that takes two
-Booleans to one, \hs{first} applied to \hs{aXor} must be an arrow from at least two Booleans to at least one.
+It is possible to divide the list just at the ``right spot'', once the consuming arrow is known. \hs{first f} splits the input
+into exact the length that \hs{f} expects as input and a rest vector. So with \hs{aXor} being an arrow that takes two Booleans
+\hs{first} applied to \hs{aXor} must be an arrow from at least two Booleans to at least one.
 \begin{haskell}
   --      a (Vec 2 Bool) (Vec 1 Bool)
   aXor :: a (Vec (VSucc (VSucc VZero)) Bool) (Vec (VSucc VZero) Bool)
@@ -595,9 +553,12 @@ Booleans to one, \hs{first} applied to \hs{aXor} must be an arrow from at least 
   first (aXor) :: (VNat k, VAdd (VSucc (VSucc VZero)) k nk, VAdd (VSucc VZero) k mk)
                => a (Vec ((VSucc (VSucc VZero)) + k) Bool) (Vec ((VSucc VZero) + k) Bool
 \end{haskell} 
-This unsugared syntax is actually a major drawback. It is not possible to write just $2+k$ instead one needs to add \hs{VAdd
-  (VSucc (VSucc VZero)) k nk} as context to the data type. This might only be tedious for easy arrows, it becomes an major error
+This unsugared syntax is actually a major drawback. It is not possible to write just $2+k$. Instead one has to add \hs{VAdd (VSucc
+  (VSucc VZero)) k nk} as context of the data type. This might only be tedious for easy arrows but it becomes an major error
 source for larger ones.
+
+\par
+Another drawback with this solution is the way the \hs{VAdd} type class is defined. 
 
 
 \subsection{Type-Family Solutions}
@@ -647,12 +608,13 @@ and gets unpractical for complicated arithmetic's.
 
 
 \subsection{Dependently-Typed Solution}
-A dependently typed programming language is a language, that mixes expressions with types. It therefore allows the calculate of
-types within that same language. 
+A dependently typed programming language is a language, that mixes expressions with types. It therefore allows the calculation of
+types within that same language.
 
 \par
 In summary the previous solutions all try to fix a unitary problem. And this problem depends on the fact that vectors aren't
-purely functional. A vectors length must show up in it's data type so that a function can match against it.
+purely functional. At least it's not practicable in Haskell to define and work with them. A vectors length must show up in it's
+data type so that a function can match against it. Here is the problem to calculate values at the type level. 
 
 \par
 The transfer of tuple arrows to vector arrows changes the inner data structure of arrows. Therefore the projection maps from the
