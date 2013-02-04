@@ -50,7 +50,7 @@
 }
 \newcommand{\grafik}[4][0.9]{%        % Bild einfügen, [Skalierung], {Dateiname ohne Endung}, {Beschriftung}, {label zum Referenzieren}
     \begin{figure}[ht]%               % before: htbp 
-        \begin{center}
+        \begin{center}e
             \includegraphics[width=#1\columnwidth]{Images/#2}
             \caption{\label{#4} #3}
             
@@ -79,9 +79,21 @@
 \definecolor{backgray}{gray}{0.95}
 
 
-\title{Hardware Design with Functional Datastructures: Functions, Arrows, Tupels, Vectors, and Inspection} 
+%\title{Hardware Design with Functional Datastructures: Functions, Arrows, Tupels, Vectors, and Inspection} 
+%\title{From Algebraic Data Structures to Hardware Describing Netlists} 
+\title{From Arrows to Netlists describing Hardware}
 
 \begin{document}
+
+\section{Abstract}
+This paper describes how to transform a functional DSL into hardware represented by a netlist. In earlier papers we proposed the
+usage of an algebraic structure called ``arrows'' (basically an abstraction of Haskell's higher-order type (->)) for describing
+DSLs. This structure forms the basis of a novel concept that gives the developer a tool at hand to describe hardware as figurative
+as possible. Aside of that an arrow provides a tool not only to synthesize, but to verify and reason about the input DSL. We have
+taken this concept to the next stage into an arrow that fits the nature of hardware much better. Alongside a CRC example we
+present multiple implementation techniques to captur the description and synthesize the netlist from it.
+
+
 
 \section{Introduction}
 
@@ -387,7 +399,7 @@ behind the ``showCircuit'' method.
 
 \par
 Functions that name single elements are named starting with ``name'' in the function name. VHDL quirks are represented by the
-functions that start with ``vhdl_''. At last there are the auxiliary functions for the remaining tasks. 
+functions that start with ``vhdl\_''. At last there are the auxiliary functions for the remaining tasks. 
 
 \par
 The ``name''-Functions are needed to assign the different elements of the netlist a desired name. The information used to generate
@@ -398,8 +410,8 @@ for input-wires; the same is done with output pins and output-wire names. This c
 component id's. The result is a component dictionary that contains for every pin a corresponding name.
 
 \par
-Specific VHDL quirks are taken care of by the ``vhdl_'' functions. This functions generate correct VHDL source code by looking at
-\hs{CircuitDescriptor}s. Nearly every ``vhdl_'' function takes one of the dictionary's as input to generate more reasonable
+Specific VHDL quirks are taken care of by the ``vhdl\_'' functions. This functions generate correct VHDL source code by looking at
+\hs{CircuitDescriptor}s. Nearly every ``vhdl\_'' function takes one of the dictionary's as input to generate more reasonable
 names. Every element that is used in the VHDL context to depict a netlist, is produced e.g. by one of the functions ``Entity'',
 ``Component'', ``Signal'' or ``Portmap''. A component in the VHDL sense is build from entity's. To generate a VHDL netlist, all
 the subnodes from the graph-view are taken. An entity is generated for every one of the subnodes. If all entity's are generated
@@ -471,34 +483,30 @@ possible to generate component arrows ad-hoc. Nonetheless a proper name to that 
 Arrows match binary hardware pretty good. In this section we show howto overcome the problems with $n$-ary ($n > 2$) hardware
 components.
 
-% TODO : wo passt dieser satz? 
-% So arrows are an adequate abstract form to describe hardware, they are modular and they come with an enhanced type system that
-% helps to reduce errors. The part which does not match the hardware perfect is the way the in- and output pins are structured,
-% the tuples.
-
 \par
 The reason for the arrows preference of binary circuits is it's tuple structure. Also the tuples allow the in- and output to be of
 any kind. In the digital world, hardware transmits nearly always Boolean values and also integers are transmitted via bundled
 Boolean values. And even the developers of Sensors try to digitize pretty early in their design process. \cite{MakinwaSmartSensor}
 
 \par
-Therefore the type \hs{a b c} is far too general for a logic gate: the type of the in going data should match the type of the out
-coming values. Secondly, a set of wires is not a tuple and for instance, the tuple \hs{(a,(b,(c,d)))} represents the same set of
-wires as the tuple \hs{(a,((b,c),d))}. The number of possible -- different with respect to syntax and type -- representations of a
-set of wires exponentially explodes with a growing number of wires that we are trying to model.
+So arrows are an adequate abstract form to describe hardware, they are modular and they come with an enhanced type system that
+helps to reduce errors. The part which does not match the hardware perfect are the tuples that prefer binary circuits. Therefore
+the type \hs{a b c} is far too general for a generic gates: the type of the in going data should match the type of the out coming
+values. A set of wires is not a tuple and for instance, the tuple \hs{(a,(b,(c,d)))} represents the same set of wires as the tuple
+\hs{(a,((b,c),d))}. The number of possible -- different with respect to syntax and type -- representations of a set of wires
+exponentially explodes with a growing number of wires that we are trying to model.
 
 \par
-The type that would be ideal for hardware development is something that is static in their types but is dynamic in the length.
-Arrows in contrast are dynamic in the type but are static in their amount of the values. So arrows are opposing the hardware's
-nature here. It is possible to transform arrows so that they match hardware more naturally, without loosing the beneficial
-properties for hardware design.
+The ideal type for hardware development is the one that is static in their data types and dynamic in the length.  Arrows in
+contrast are dynamic in the data type and are static in their amount of the values. So arrows are opposing the hardware's nature
+here. It is possible to transform arrows so that they match hardware more naturally, without loosing the beneficial properties for
+hardware design.
 
 \par
-A vector fulfills the desired type needs of the hardware behavior. The vector $Vec_n^b$ is one of $n$ values over the type $b$. In
-the following we sketch different ways to express such ``Vector-Arrows'' and present different approaches.
+A vector fulfills the desired data type needs of the hardware behavior. The vector $Vec_n^b$ is one of $n$ values over the type
+$b$. The arrow class with vectors instead of tuples is described by the following class definition.
 
 \begin{haskell}
-------------------------------------------------REVIEW only one example ? 
 class VArrow a where
   arr     :: ((@$Vec_n^{b}$@)-> (@$Vec_m^{b}$@)) -> a (@$Vec_n^{b}$@) (@$Vec_m^{b}$@)
   firsts  :: a (@$Vec_n^{b}$@) (@$Vec_m^{b}$@) -> a (@$Vec_{(n:+k)}^{b}$@) (@$Vec_{(m:+k)}^{b}$@)
@@ -508,10 +516,12 @@ class VArrow a where
   (*^*)   :: a (@$Vec_n^{b}$@) (@$Vec_m^{b}$@) -> a (@$Vec_k^{b}$@) (@$Vec_j^{b}$@) -> a (@$Vec_{(n:+k)}^{b}$@) (@$Vec_{(m:+j)}^{b}$@)
 \end{haskell}
 
+In the following sections we sketch different ways to express such ``Vector-Arrows'' and present different approaches to work with
+them.
 
 \subsection{Horn Clauses Solution}
 As vectors are not a purely functional data structure and lists come pretty close to them the first approach would be to constrain
-a list data type in length. It is necessary to introduce a counter, into the data type. We choose type level natural numbers to
+a list data type in length. It is necessary to introduce a counter into the data type. We choose type level natural numbers to
 restrict the list in length.
 % TODO, cite richtig platzieren
 \cite{kiselyov:strong_collections}
@@ -609,20 +619,20 @@ and gets unpractical for complicated arithmetic's.
 
 \subsection{Dependently-Typed Solution}
 A dependently typed programming language is a language, that mixes expressions with types. It therefore allows the calculation of
-types within that same language.
+types within that same language.  There are multiple languages with dependent types out there. The one with a pretty good
+connection to Haskell is Agda. The following describes the arrow class in Agda with dependent types.
+
 
 \par
 In summary the previous solutions all try to fix a unitary problem. And this problem depends on the fact that vectors aren't
 purely functional. At least it's not practicable in Haskell to define and work with them. A vectors length must show up in it's
-data type so that a function can match against it. Here is the problem to calculate values at the type level. 
-
-\par
-The transfer of tuple arrows to vector arrows changes the inner data structure of arrows. Therefore the projection maps from the
-inner data type must translate to the vector version. \hs{first} and \hs{second} exactly match the tuple projection maps in
-Haskell, namely \hs{fst} and \hs{snd}.
+data type so that a function can match against it. The problem here is to calculate values at the type level. The transfer of the
+inner tuples into the vectors changes the inner data structure of arrows. Therefore the projection maps from that data type must
+translate to a vector version. \hs{first} and \hs{second} exactly match the tuple projection maps in Haskell, namely \hs{fst} and
+\hs{snd}.
 
 \par 
-With vectors the \hs{first} statement is straight forward defined. The \hs{second} expression is the head-scratcher.  The
+With vectors the \hs{first} statement is straight forward defined. The \hs{second} expression is the head-scratcher. The
 implementation of \hs{first} constraints it's inputs to only those, that are equal or larger than the ones \hs{f} expects. The
 \hs{second} case adds the right alignment on top. This can be achieved by calculating the size of the sub vector, ignoring him and
 applying the function to the reminder. It can also be done via reversing the vector multiple times and than applying the function
@@ -633,9 +643,8 @@ While \hs{aSwitch} is of type $Vec_n^{Int}$, the expression \hs{seconds aSwitch}
 is hard to express in a functional data type. In a dependent language this is easily expressible by the data type.
 
 \par
-There are multiple languages with dependent types out there. The one with a pretty good connection to Haskell is Agda. The
-following describes the arrow class in Agda with dependent types.
-
+The arrow type class form Haskell must be translated into a vector arrow data structure inside Agda, where typically records do
+the job. Therefore the vector arrow record in Agda is defined like so:
 
 \begin{haskell}
 record VArrow (_~~>_ : Set -> Set → Set) : Set₁ where 
@@ -651,41 +660,73 @@ record VArrow (_~~>_ : Set -> Set → Set) : Set₁ where
   infixr 2 _&&&_
 \end{haskell}
 
-\begin{itemize}
-\item 
-  \begin{itemize}
-  \item tuple arrows => kartesische produkt kategorien
-  \item vector arrows => produkt familien kategorien 
-  \end{itemize}
+This specifies a record over a function like type \hs{_~~>_}. With the \hs{forall} definition one matches the context of a Haskell
+type definition. The \hs{Vec} denotes a vector type defined in Agda that is used to specify the arrow record. A close look at the
+\hs{firsts} and \hs{seconds} statements reveals, that they have the same type. If \hs{firsts} comes with a type $(n + k)$ then it
+would be reasonable to use $(k + n)$ in the type of the \hs{seconds} statement. This can't be done because of the way the addition
+is defined. 
 
-\item problems with agda / dependent typed solutions 
-  \begin{itemize}
-  \item ebenfalls last lässt sich nicht sauber definieren / Gründe??? 
-  \end{itemize}
-\end{itemize}
+\par
+With this vector record at hand it is possible to apply the concepts shown earlier. The \hs{Grid}-type is defined in a following
+way inside agda.
 
-\subsection{Vector-Arrows are not Arrows}
--  :+: and :-:
-- \ldots
+\begin{haskell}
+data Grid (A : Set -> Set -> Set) : Set₁ where
+  GR : ∀ {B C} → ( A B C ) × ℕ → Grid A
+\end{haskell}
 
-Conclusion: That is dependent typing and Haskell is not (yet) a dependently typed function programming language. And all in all it
-seems that the Vec-Type together with the Arrows-Instances is too much dependent typing for Haskell
+It is now possible to define the graph constructing function on top of the \hs{Grid}-type. This will also generate a connection
+graph of the circuit structure, that can later be translated into all forms of hardware describing code.
 
 
-\section{Copeing with \hs{arr}-Problem}
 
-\subsection{ForSyDe: Using the AST of the arr argument}
-In order to transform a usual Haskell function into an hardware block, ForSyDe stores the AST of that function which is used later
-to synthesis VHDL.  \
+\section{Conclusion}
+%TODO: NETZLISTEN PRETTY PRINT FUNKTION HINZUFUEGEN
 
-\subsection{Show-Type-Class (or Typeable)}
+With this paper we showed how to model circuits from arrow descriptions. Arrows bring just the right amount of abstraction into
+the hardware design process. This offers on the one hand a precise tool for the developer. On the other hand it stays as flexible
+as it is usual in the software design process.
 
+\par
+With the help of the data type \hs{Grid} we showed how to include the newly generated arrows alongside with a describing
+part. This one is not only stored in a graph structure, but in a hierarchically graph which matches the hierarchically structure
+of hardware pretty good. The concept, to construct a circuit from other circuits that also have underlying structure is common in
+the hardware design world (e.g. UML-Activity-Diagrams, Petri-Nets, etc.). 
 
-\subsection{Generalized Arrows -- avoiding arr}
+\par
+Our concept is mighty enough to be able to generate graphs and therefore netlists from only the arrow definitions. We think of
+netlists as a form of graphs. On the other way round the graph is a mathematical description of what a netlist is. To get from a
+graph to a netlist only a ``pretty-print'' function is needed.
 
+\par
+The classical arrows come with a tuple inner structure which is the foundation of our problems. Although we are able to simulate
+list-like behavior it is neither practical to work with nor is it correct in a data type sense. To take arrows from tuples to
+arrows with vectors is therefore mandatory.
 
+\par
+A proof of the superiority of the functional approach is the modeled CRC circuit. Although we used the classical arrows for
+modeling, it wasn't much pain to model the CRC algorithm with them. It is up to the developer to use a decent data layout so that
+the tuple structure stays out of the way. The problems that come from the tuple arrows are theoretically gone with a vector
+arrow. It is just not possible to define vectors in such a way inside Haskell that blend with the arrows. 
+
+\par
+At last we where therefore forced to take the vector arrow concept into a language that can handle them naturally. Also the gained
+type safety of the vectors are a benefit the developer can't abdicate while working in a functional language. 
+
+\section{Future Work}
+We are going to follow the vector approach inside Agda. The graph generation is something that can be done completely inside a
+dependent typed language. And there could be a connection between Agda and Haskell due to the IO Monad, but this connection is
+still work in progress. To fully utilize Agda, we have to define the Agda data types much more in detail. Also the combination and
+connection algorithms need to be translated from Haskell into Agda.
+
+\par
+It might be possible to completely switch over to an Agda solution. But at the moment this is just an idea and needs further
+research. Also Agda is a language that is still in development and there are major changes from time to time. So it is not clear
+how reasonable a solution completely in agda is. 
 
 
 \bibliographystyle{plain}
 \bibliography{Bibliography}
 \end{document}
+
+%  LocalWords:  netlists LocalWords CRC
