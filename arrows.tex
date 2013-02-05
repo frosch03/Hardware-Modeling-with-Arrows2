@@ -1,23 +1,12 @@
-%\documentclass[11pt,final,a4paper,leqno]{article}
-\documentclass[11pt,final,a4paper]{article}
-\usepackage[ngerman,english]{babel}
-%\usepackage{ucs}
-\usepackage[T1]{fontenc}
-\usepackage{color}
-\usepackage{graphicx}
-\usepackage{subfigure}
-\usepackage{listings}
+\documentclass[a4paper,UKenglish]{lipics}
 \usepackage{fancyvrb}
-\usepackage{textcomp}
-\usepackage{setspace}
-%\usepackage{MnSymbol}
-\usepackage{amsmath}
+
 
 \lstnewenvironment{haskell}[1][]{
   \lstset{
     fancyvrb=true, columns=flexible, language=haskell,
     captionpos=b,
-    basicstyle=\ttfamily\small\setstretch{1},
+    basicstyle=\ttfamily\small,
     commentstyle=\color{ggray}\slshape,
     upquote=true,
     escapechar={@},
@@ -36,7 +25,7 @@
   \lstinline[
     fancyvrb=true, columns=flexible, language=haskell,
     captionpos=b,
-    basicstyle=\ttfamily\setstretch{1},
+    basicstyle=\ttfamily,
     commentstyle=\color{ggray}\slshape,
     upquote=true,
     escapechar={@},
@@ -50,7 +39,7 @@
 }
 \newcommand{\grafik}[4][0.9]{%        % Bild einfügen, [Skalierung], {Dateiname ohne Endung}, {Beschriftung}, {label zum Referenzieren}
     \begin{figure}[ht]%               % before: htbp 
-        \begin{center}e
+        \begin{center}
             \includegraphics[width=#1\columnwidth]{Images/#2}
             \caption{\label{#4} #3}
             
@@ -79,9 +68,15 @@
 \definecolor{backgray}{gray}{0.95}
 
 
-%\title{Hardware Design with Functional Datastructures: Functions, Arrows, Tupels, Vectors, and Inspection} 
-%\title{From Algebraic Data Structures to Hardware Describing Netlists} 
 \title{From Arrows to Netlists describing Hardware}
+
+\author[1]{Matthias Brettschneider}
+\author[2]{Tobias Häberlein}
+\affil[1]{University of Applied Science  \\ Albstadt - Sigmaringen \\ brettschneider@hs-albsig.de}
+\affil[2]{University of Applied Science  \\ Albstadt - Sigmaringen \\ haeberlein@hs-albsig.de}
+
+\keywords{functional programming, dependent typed programming, algebraic data structures, arrows, vectors, graphs, netlists}
+
 
 \begin{document}
 
@@ -107,10 +102,9 @@ HDRE\cite{hydra:old,donnell}. These two HDL's gave birth to numerous later appro
 
 One of Sheeran's students, Coen Claessen, later came up with a monadic solution called Lava\cite{claessen:hardware}. Ingo Sanders
 et al introduced an approach, ForSyDe \cite{forsyde:phd,forsyde:ieee} that is based on meta programming techniques. Lava, ForSyDe
-and also Hydra %TODO : Hydra reference in literature
-represent HDL's embedded around the functional programming language Haskell; MyHDL \cite{myhdl} is embedded in the functional
-flavored interpreter language Python. There is HML\cite{hml}, a simple HDL which is embedded inside ML, another functional
-programming language.
+and also Hydra \cite{donnell} represent HDL's embedded around the functional programming language Haskell; MyHDL \cite{myhdl} is
+embedded in the functional flavored interpreter language Python. There is HML\cite{hml}, a simple HDL which is embedded inside ML,
+another functional programming language.
 
 Than there are functional languages that are exclusively designed to describe hardware, like the language SAFL (=Statically
 Allocated Functional Language)\cite{sharp,sharp:flash,sharp:codesign}. This one compiles direct into a netlist; it does not
@@ -130,14 +124,13 @@ generate FPGA implementations \cite{cryptol:fpga}. Cryptol has been adopted by a
 anymore.
 
 \section{Arrows for Hardware development}
-% TODO : Cite: Generalizing Monads to arrows
-Arrows are lately developed concept in functional programming. As a generalization of Monads, Arrows fit the task of hardware
-development better. Arrows enable a data flow view onto problems. This fits the hardware developers view which has always been a
-data flow view, as in circuit board layouts or in state flow diagrams. The arrow \emph{proc}-notation also transports the data
-flow view into the textual source. %TODO: cite ross patterson
-Its easy to generate netlists out of arrows, which basically boils down to a pretty print function. This also holds for the
-generation of typical HDL code like VHDL. They can be used to simulate behavior or proof properties of the circuit. This section
-gives a brief overview of the \hs{Grid}-Arrow that can be used to generate VHDL code or to simulate a circuit.
+Arrows are lately developed concept in functional programming \cite{Hughes98generalisingmonads}. As a generalization of Monads,
+Arrows fit the task of hardware development better. Arrows enable a data flow view onto problems. This fits the hardware
+developers view which has always been a data flow view, as in circuit board layouts or in state flow diagrams. The arrow
+\emph{proc}-notation also transports the data flow view into the textual source. \cite{PatersonNewNotation} Its easy to generate
+netlists out of arrows, which basically boils down to a pretty print function. This also holds for the generation of typical HDL
+code like VHDL. They can be used to simulate behavior or proof properties of the circuit. This section gives a brief overview of
+the \hs{Grid}-Arrow that can be used to generate VHDL code or to simulate a circuit.
 
 \subsection{Grid-Arrow}
 \label{subsect:grid}
@@ -231,7 +224,7 @@ of the structure \((x,(y,z))\) to a different structure \((y,(x,z))\).
 \begin{haskell}
 aFloatR :: (Arrow a) => Grid a (my, (b, rst)) (b, (my, rst))
 aFloatR           
-  =   aDistr      -- aDistr : is that really aDistr?
+  =   aDistr 
   >>> first aSnd
 \end{haskell} 
 
@@ -275,10 +268,10 @@ The shift register is modeled from a list and the positions of where to feedback
 the feedback value is feed back into the list by the \hs{aFloatR} arrow.
 
 \par
-Different feedback positions are captured in multiple arrows called \hs{aFeedback$_n$}. 
+Different feedback positions are captured in multiple arrows called \hs{aMoveBy$_n$}. 
 
 \begin{haskell}
-aFeedback5
+aMoveBy5
   =   aFloatR
   >:> aFloatR
   >:> aFloatR
@@ -286,15 +279,14 @@ aFeedback5
   >:> aFlip
 \end{haskell} 
 
-% TODO : aCRC8
-The principle behind every CRC is captured in the arrow \hs{crc\_checksum\_8} 
+The principle behind every CRC is captured in the arrow \hs{aCRC8} 
 \begin{haskell}
-crc_checksum_8 crc_polynom polySkip padding start rest --------------------REVIEW
+aCRC8 polynom polySkip padding start reminder
   =   (padding &&& aId)
-  >>> aFeedback8
+  >>> aMoveBy8
 
-  >>> (start &&& rest)
-  >>> first (crc_polynom)
+  >>> (start &&& reminder)
+  >>> first polynom
 
   >>> step
   >>> step
@@ -305,26 +297,27 @@ crc_checksum_8 crc_polynom polySkip padding start rest --------------------REVIE
 
   >>> aFlip
   >>> polySkip
-  >>> crc_polynom
+  >>> polynom
 
   where step =   a_xXX2XXx
              >>> first 
                  (   aFlip
                  >>> polySkip
-                 >>> crc_polynom
+                 >>> polynom
                  )   
 \end{haskell} 
 
 The CRC input data are alignet and the padding bits are floated to the right end of the tuple list.
 \[((p_0, p_1), (b_0, (b_1, (b_2, (b_3, b_4))))) \rightarrow (b_0, (b_1, (b_2, (b_3, (b_4, (p_0, p_1))))))\]
 
-After that, the arrow is an abstract representation of the CRC calculation. By parameterising over \hs{crc_checksum_8}, every
+After that, the arrow is an abstract representation of the CRC calculation. By parameterising over \hs{aCRC8}, every
 concrete CRC algorithm can be constructed. Due to Haskells inability to dynamicaly change the count of certain expressions in the
 function body, our example is limited to 8Bit.
 
 
 \subsection{Example}
-A CRC-Code is equipped with a polynomial that especially fits the needs of the domain. This example shows the CRC-Code for USB. With the polynomial:
+A CRC-Code is equipped with a polynomial that especially fits the needs of the domain. This example shows the CRC-Code for
+USB. With the polynomial:
 \[
   \text{USB} : x^5 + x^2 + 1 
 \]
@@ -335,27 +328,12 @@ register. For the USB CRC $\text{bit}_0$ and $\text{bit}_2$ are \hs{xor}'ed with
 \xfig[.5]{CRC-USB}{USB CRC}{fig:usb-crc}
 
 To summarize this for the USB CRC, the highest exponent is $5$. Therefore:
-% TODO : Namings aFeedback ... feedback usw. ... 
 \begin{itemize}
-  \item the \hs{polySkip} needs to be \hs{aFeedback5}
+  \item the \hs{polySkip} needs to be \hs{aMoveBy5}
   \item there are $5$ \hs{padding} bits \hs{aConst (False, (False, (False, (False, False))))} 
-  \item the split between \hs{start} and \hs{rest} is after bit $5$
+  \item the split between \hs{start} and \hs{reminder} is after bit $5$
 \end{itemize}
 
-
-% \begin{haskell}
-% crc_checksum_ccit_8 
-%   :: Arrow a => Grid a 
-%     (Bool, (Bool, (Bool, (Bool, (Bool, (Bool, (Bool, Bool))))))) 
-%     (Bool, (Bool, (Bool, Bool)))
-% crc_checksum_ccit_8
-%   = crc_checksum_8   
-%       crc_polynom_ccit
-%       aFeedback4
-%       (aConst (False, (False, (False, False))))
-%       (second.second.second.second $ aFst)
-%       (aSnd >>> aSnd >>> aSnd >>> aSnd >>> aSnd)
-% \end{haskell} % $ to fix that syntax highlighting problem 
 
 
 \subsection{Building Netlist-Graphs}
@@ -417,12 +395,25 @@ names. Every element that is used in the VHDL context to depict a netlist, is pr
 the subnodes from the graph-view are taken. An entity is generated for every one of the subnodes. If all entity's are generated
 the VHDL component header is the big bracket around them. 
 
+\begin{haskell}
+showCircuit :: CircuitDescriptor ->  String
+showCircuit g 
+     = concat $ map break
+     [ ""
+     , vhdl_header
+     , vhdl_entity         g namedComps
+     , vhdl_architecture g 
+     , vhdl_components     g namedComps
+     , vhdl_signals        g namedEdges
+     , vhdl_portmaps       g namedComps namedEdges
+     ]
+     where namedEdges = generateNamedEdges g
+            namedComps = generateNamedComps g
+\end{haskell} % $
+
 \par
-To the outside only two functions remain view able. Both of them take something into a \hs{String}, one from a \hs{CircuitDescriptor} and the other one from an \hs{Edge}.
-
-
-
-%% ---------------------------------------------------------------------------------------------- %%
+To the outside only two functions remain view able. Both of them take something into a \hs{String}, one from a
+\hs{CircuitDescriptor} and the other one from an \hs{Edge}.
 
 \par
 The execution of the described functions produce a \hs{Grid} arrow as result. As stated in Section \ref{subsect:grid} a Grid
@@ -448,8 +439,6 @@ graph of circuits one has to make sure, that all the identifiers inside the comp
 It turns out, that this graph in fact is a form of a netlist. Once the graph is created, it is straight forward to translate it
 into another netlist format (e.g. VHDL).
 
-%% ---------------------------------------------------------------------------------------------- %%
-
 \subsection{Drawbacks}
 This approach has problems, that are visible in the CRC example. The input data of these hardware components must fit into
 tuples. Logic gates fit well into this scheme, but for hardware components with more than two pins data structures like lists are
@@ -462,14 +451,14 @@ The tedious tuple code could be avoided by using Patterson's proc-notation for a
 proc-notation abstracts the tuples to named variables. The hardware can be described more ``visually'' in the source. But this is
 just syntactic sugar, there are still tuples in use. The following code shows how the USB CRC is modeled with the proc-notation:
 \begin{haskell}
------------------------------------------------- REVIEW wrong function
-crc_polynom_ccit 
- = proc (b4, (b3, (b2, (b1, b0)))) -> do
-     b4' <- aId  -< (b3)
-     b3' <- aId  -< (b2)
-     b2' <- aXor -< (b4, b1)
-     b1' <- aXor -< (b4, b0)
-     returnA     -< (b4', (b3', (b2', b1')))
+usbPolynom
+ = proc (x5, (x4, (x3, (x2, (x1, x0))))) -> do
+     o1 <- aXor -< (x5, x0)
+     o2 <- aId  -< (x1)
+     o3 <- aXor -< (x5, x2)
+     o4 <- aId  -< (x3)
+     o5 <- aId  -< (x4)
+     returnA    -< (o5, (o4, (o3, (o2, o1))))
 \end{haskell} 
 
 \par
@@ -523,12 +512,10 @@ them.
 As vectors are not a purely functional data structure and lists come pretty close to them the first approach would be to constrain
 a list data type in length. It is necessary to introduce a counter into the data type. We choose type level natural numbers to
 restrict the list in length.
-% TODO, cite richtig platzieren
-\cite{kiselyov:strong_collections}
 \begin{haskell}
 data Vec n a where
-  T    :: Vec VZero a                                     -- (@$Vec_0^a$@)
-  (:.) :: (VNat n) => a -> (Vec n a) -> (Vec (VSucc n) a) -- (@$a \rightarrow Vec_n^a \rightarrow Vec_{n+1}^a$@)
+  T    :: Vec VZero a
+  (:.) :: (VNat n) => a -> (Vec n a) -> (Vec (VSucc n) a)
 \end{haskell} 
 
 The type level numbers are introduced as peano numbers. This is similar to the mechanism shown by Kiselyov et al
@@ -540,12 +527,6 @@ takes it's the first $n$ inputs from the front of the vector. \hs{second} takes 
 Problem is to decide, where the ``end'' starts. 
 
 \par
-%%% Stimmt das hier?
-% * Auf type ebene nur Bools
-% * Nat's gehen nicht, weil die rekursion nicht definierbar ist
-% ** ansatzpunkt für die nächste lösung mit den type families
-
-\par
 As Haskell is statically typed, everything in the data type is declared. All variables that hold type level numbers must be
 defined in the data type context. To divide a vector in a \hs{first} and a \hs{second} half, one must calculate the peano number
 of the split position. This is done by type classes like \hs{VAdd}. They must be listed in the type context of the Vector. Working
@@ -553,15 +534,14 @@ with this contexts reminds of Prolog's Horn Clauses programming style.
 
 \par
 It is possible to divide the list just at the ``right spot'', once the consuming arrow is known. \hs{first f} splits the input
-into exact the length that \hs{f} expects as input and a rest vector. So with \hs{aXor} being an arrow that takes two Booleans
+into exact the length that \hs{f} expects as input and a reminder vector. So with \hs{aXor} being an arrow that takes two Booleans
 \hs{first} applied to \hs{aXor} must be an arrow from at least two Booleans to at least one.
 \begin{haskell}
-  --      a (Vec 2 Bool) (Vec 1 Bool)
-  aXor :: a (Vec (VSucc (VSucc VZero)) Bool) (Vec (VSucc VZero) Bool)
+aXor :: a (Vec (VSucc (VSucc VZero)) Bool) (Vec (VSucc VZero) Bool)
 
-  --              a (Vec 2+k Bool) (Vec 1+k Bool)
-  first (aXor) :: (VNat k, VAdd (VSucc (VSucc VZero)) k nk, VAdd (VSucc VZero) k mk)
-               => a (Vec ((VSucc (VSucc VZero)) + k) Bool) (Vec ((VSucc VZero) + k) Bool
+first (aXor) 
+    :: (VNat k, VAdd (VSucc (VSucc VZero)) k nk, VAdd (VSucc VZero) k mk)
+    => a (Vec ((VSucc (VSucc VZero)) + k) Bool) (Vec ((VSucc VZero) + k) Bool
 \end{haskell} 
 This unsugared syntax is actually a major drawback. It is not possible to write just $2+k$. Instead one has to add \hs{VAdd (VSucc
   (VSucc VZero)) k nk} as context of the data type. This might only be tedious for easy arrows but it becomes an major error
@@ -647,20 +627,32 @@ The arrow type class form Haskell must be translated into a vector arrow data st
 the job. Therefore the vector arrow record in Agda is defined like so:
 
 \begin{haskell}
-record VArrow (_~~>_ : Set -> Set → Set) : Set₁ where 
+record VArrow (_~>_ : Set -> Set -> Set) : Set1 where 
   field
-    arr     : forall {B n m}     -> (Vec B n -> Vec B m) -> (Vec B n) ~~> (Vec B m)
-    firsts  : forall {B n m k}   -> Vec B n ~~> Vec B m -> Vec B (n + k) ~~> Vec B (m + k)    
-    seconds : forall {B n m k}   -> Vec B n ~~> Vec B m -> Vec B (n + k) ~~> Vec B (m + k) 
-    _>>>_   : forall {B n m k}   -> Vec B n ~~> Vec B m -> Vec B m ~~> Vec B k -> Vec B n ~~> Vec B k
-    _***_   : forall {B n m k j} -> Vec B n ~~> Vec B m -> Vec B k ~~> Vec B j -> Vec B (n + k) ~~> Vec B (m + j)
-    _&&&_   : forall {B n m k}   -> Vec B n ~~> Vec B m -> Vec B n ~~> Vec B k -> Vec B n ~~> Vec B (m + k) 
+    arr     : forall {B n m}     
+    -> (Vec B n -> Vec B m) -> (Vec B n) ~> (Vec B m)
+
+    firsts  : forall {B n m k}   
+    -> Vec B n ~> Vec B m -> Vec B (n + k) ~> Vec B (m+k)    
+
+    seconds : forall {B n m k}   
+    -> Vec B n ~> Vec B m -> Vec B (n + k) ~> Vec B (m+k) 
+
+    _>>>_   : forall {B n m k}   
+    -> Vec B n ~> Vec B m -> Vec B m ~> Vec B k -> Vec B n ~> Vec B k
+
+    _***_   : forall {B n m k j} 
+    -> Vec B n ~> Vec B m -> Vec B k ~> Vec B j -> Vec B (n+k) ~> Vec B (m+j)
+
+    _&&&_   : forall {B n m k}   
+    -> Vec B n ~> Vec B m -> Vec B n ~> Vec B k -> Vec B n ~> Vec B (m+k) 
+
   infixr 2 _>>>_
   infixr 2 _***_
   infixr 2 _&&&_
 \end{haskell}
 
-This specifies a record over a function like type \hs{_~~>_}. With the \hs{forall} definition one matches the context of a Haskell
+This specifies a record over a function like type \hs{_~>_}. With the \hs{forall} definition one matches the context of a Haskell
 type definition. The \hs{Vec} denotes a vector type defined in Agda that is used to specify the arrow record. A close look at the
 \hs{firsts} and \hs{seconds} statements reveals, that they have the same type. If \hs{firsts} comes with a type $(n + k)$ then it
 would be reasonable to use $(k + n)$ in the type of the \hs{seconds} statement. This can't be done because of the way the addition
@@ -671,8 +663,8 @@ With this vector record at hand it is possible to apply the concepts shown earli
 way inside agda.
 
 \begin{haskell}
-data Grid (A : Set -> Set -> Set) : Set₁ where
-  GR : ∀ {B C} → ( A B C ) × ℕ → Grid A
+data Grid (A : Set -> Set -> Set) : Set1 where
+  GR : forall {B C} -> (( A B C ) ,  Nat) -> Grid A
 \end{haskell}
 
 It is now possible to define the graph constructing function on top of the \hs{Grid}-type. This will also generate a connection
@@ -681,8 +673,6 @@ graph of the circuit structure, that can later be translated into all forms of h
 
 
 \section{Conclusion}
-%TODO: NETZLISTEN PRETTY PRINT FUNKTION HINZUFUEGEN
-
 With this paper we showed how to model circuits from arrow descriptions. Arrows bring just the right amount of abstraction into
 the hardware design process. This offers on the one hand a precise tool for the developer. On the other hand it stays as flexible
 as it is usual in the software design process.
@@ -723,6 +713,7 @@ connection algorithms need to be translated from Haskell into Agda.
 It might be possible to completely switch over to an Agda solution. But at the moment this is just an idea and needs further
 research. Also Agda is a language that is still in development and there are major changes from time to time. So it is not clear
 how reasonable a solution completely in agda is. 
+
 
 
 \bibliographystyle{plain}
