@@ -79,58 +79,98 @@
 
 
 \begin{document}
+\maketitle
 
-\section{Abstract}
+
+\begin{abstract}
 This paper describes how to transform a functional DSL into hardware represented by a netlist. In earlier papers we proposed the
 usage of an algebraic structure called ``arrows'' (basically an abstraction of Haskell's higher-order type (->)) for describing
-DSLs. This structure forms the basis of a novel concept that gives the developer a tool at hand to describe hardware as figurative
-as possible. Aside of that an arrow provides a tool not only to synthesize, but to verify and reason about the input DSL. We have
-taken this concept to the next stage into an arrow that fits the nature of hardware much better. Alongside a CRC example we
-present multiple implementation techniques to captur the description and synthesize the netlist from it.
-
+DSLs. This structure forms the basis of a novel concept that gives the developer a tool at hand to describe hardware functionally
+in a natural way. Aside of that an arrow provides not only a tool to synthesize, but to verify and reason about the input DSL. We
+have taken this concept to the next stage, from a static size length arrow into a fixed size length vector arrows fitting much
+better to logic gates with a fixed number of in- and output pins. There are many sound possibilities to use the algebraic arrow
+data structure to model hardware. This paper presents some of them which showed to be most useful. A simple example, the
+implementation of a CRC, is used to illustrate the presented techniques.
+\end{abstract}
 
 
 \section{Introduction}
-
-\section{Hardware Modeling in the Functional Programming Paradigm: Recent Approaches}
 \label{recent_approaches}
-% TODO : Is stated in intro? 
-As stated in the introduction, modeling hardware in functional languages is old news, there have been various approaches in the
-past. The beginning dates back to the early 80s where a group around Mary Sheeran came up with a functional HDL (Hardware
-Description Language) muFP\cite{sheeran:muFP}. In the same decade John O'Donnell presented his functional HDL
-HDRE\cite{hydra:old,donnell}. These two HDL's gave birth to numerous later approaches that are base more or less on them.
+As hardware becomes more and more like software, it is not surprising that there are various approaches to bring software
+development concepts into the hardware development process. Until now, the way hardware is defined is mostly influenced by the
+imperative/procedural paradigm. Our approach is mainly influenced by the functional programming paradigm.
 
+\par
+Modeling hardware in functional languages is not new, there have been various approaches in the past. The beginning dates back to
+the early 80s where a group around Mary Sheeran came up with a functional HDL (Hardware Description Language)
+muFP\cite{sheeran:muFP}. In the same decade John O'Donnell presented his functional HDL HDRE\cite{hydra:old,donnell}. These two
+HDL's gave birth to numerous later approaches that are base more or less on them.
+
+\par
 One of Sheeran's students, Coen Claessen, later came up with a monadic solution called Lava\cite{claessen:hardware}. Ingo Sanders
 et al introduced an approach, ForSyDe \cite{forsyde:phd,forsyde:ieee} that is based on meta programming techniques. Lava, ForSyDe
-and also Hydra \cite{donnell} represent HDL's embedded around the functional programming language Haskell; MyHDL \cite{myhdl} is
-embedded in the functional flavored interpreter language Python. There is HML\cite{hml}, a simple HDL which is embedded inside ML,
-another functional programming language.
+and also Hydra \cite{donnell} represent HDL's embedded around the functional programming language Haskell. There is HML\cite{hml},
+a simple HDL which is embedded inside ML, another functional programming language.
 
-Than there are functional languages that are exclusively designed to describe hardware, like the language SAFL (=Statically
-Allocated Functional Language)\cite{sharp,sharp:flash,sharp:codesign}. This one compiles direct into a netlist; it does not
-support dynamic allocated storage like heaps or stacks since these kind of software features do not map well on silicone.
+\par
+There are functional languages that are exclusively designed to describe hardware, like the language SAFL (=Statically Allocated
+Functional Language)\cite{sharp,sharp:flash,sharp:codesign}. This one compiles direct into a netlist; it does not support dynamic
+allocated storage like heaps or stacks since these kind of software features do not map well on silicone.
 
+\par
 Another candidate for the functional meta programming languages section is the language \reFLect \cite{reflect}. It's one that is
 developed at Intel and tailored for hardware design and theorem proving.
 
+\par
 There are good reasons why meta programming beneficial for the use as HDLs. Meta programming allows a program to have a
 representation of itself, usually by providing a data structure of the abstract syntax tree. With this tool at hand the developer
 is able to \emph{compute} parts of their program rather than \emph{write} them. This leads to a direct and natural implementation
 of program transformations.
 
+\par
 With cryptol\cite{cryptol:programming} another class of functional HDLs enters the scene. While all the other HDL's are general
 purpose, cryptol is designed to model cryptographic hardware. A sub-language of cryptol is designed by Galois, explicit to
 generate FPGA implementations \cite{cryptol:fpga}. Cryptol has been adopted by an American agency and isn't public developed
 anymore.
 
+
 \section{Arrows for Hardware development}
 Arrows are lately developed concept in functional programming \cite{Hughes98generalisingmonads}. As a generalization of Monads,
-Arrows fit the task of hardware development better. Arrows enable a data flow view onto problems. This fits the hardware
-developers view which has always been a data flow view, as in circuit board layouts or in state flow diagrams. The arrow
-\emph{proc}-notation also transports the data flow view into the textual source. \cite{PatersonNewNotation} Its easy to generate
-netlists out of arrows, which basically boils down to a pretty print function. This also holds for the generation of typical HDL
-code like VHDL. They can be used to simulate behavior or proof properties of the circuit. This section gives a brief overview of
-the \hs{Grid}-Arrow that can be used to generate VHDL code or to simulate a circuit.
+Arrows fit the task of hardware development much better. Arrows enable a data flow view onto problems. This fits the hardware
+developers view which has always been a data flow view, as in circuit board layouts or in state flow diagrams.
+
+\par
+The typical problem one faces while describing hardware through functional programming languages is, a functional function is much
+more feature rich than the hardware pendant. In the functional programming world functions are so called ``first class citizens'',
+which means that they can be passed around like ordinary values. Therefore another function might not only expect values as
+parameters, but also functions. This is similar to C++'s template mechanism, where for example a sorting algorithm is type
+independently defined. In the functional paradigm such a behavior is achieved by passing an ordering function to the sorting
+mechanism. 
+
+\par
+The other effect of functions being first class is called currying. This means that it is perfectly correct for any function to
+not return a value but to return a function. Currying is something that is present in every function that is supplied with less
+parameters than expected. Such function calls result in yet another function which now expects the not supplied parameters as
+arguments. 
+
+\par 
+It is clear that these concepts can't be translated into hardware where a function is symbolized by a circuit. A good HDL must
+come up with a mechanism to even out these differences. Arrows are just the right method to do the job. They offer an interface to
+the feature set of functions. Like in a construction kit an arrow enables the developer to choose from the functional function
+features. We therefore are able to define arrows that match exactly the feature set of a hardware circuit.
+
+\par
+Another reason for the use of arrow is that a concept which is less feature rich can be modeled more abstract. Typical HDL's do
+not take this into account. With the arrow approach we gain a maximum level of abstraction while not permitting features that
+can't translate into silicone. Arrows are a good compromise between a shallow embedded approach, where the host language is only
+used to construct the netlist and a deep embedded approach, where a data type inside the host language is the netlist. 
+
+\par
+The arrow \emph{proc}-notation \cite{PatersonNewNotation} also transports the data flow view into the textual source. It is easy
+to generate netlists from arrows, which basically boils down to a pretty print function. This also holds for the generation of
+typical HDL code like VHDL. They can be used to simulate behavior or proof properties of the circuit. This section gives a brief
+overview of the \hs{Grid}-Arrow that can be used to generate VHDL code or to simulate a circuit. The name Grid is analogously
+chosen to the snap circuit toys from childhood, where one also could combine hardware elements arbitrary.
 
 \subsection{Grid-Arrow}
 \label{subsect:grid}
@@ -140,11 +180,10 @@ tuple. The arrow resides in the first, the graph occupies the second part of the
 \begin{haskell}
   newtype Grid a b c = GR (a b c, CircuitDescriptor)
 \end{haskell} 
-Alongside with the arrow execution, the generated Netlist is stored inside graph structure called a \hs{CircuitDescriptor}.  The
-name Grid is analog chosen to the snap circuit toys from childhood, where one also could combine hardware elements arbitrary. The
-Grid type is a surface where hardware elements can be combined with each other to compose new structures and analyze them. It is
-not only the surface to combine hardware components, it's also recursive. So it is used as hardware component itself which means a
-\hs{Grid} is an arrow on its own.
+Alongside with the arrow execution, the generated Netlist is stored inside the graph structure called a
+\hs{CircuitDescriptor}. The Grid type is a surface where hardware elements can be combined to compose new structures and analyze
+them. It is not only the surface to combine hardware components, it's also recursive. So it is used as hardware component itself
+which means a \hs{Grid} is an arrow on its own.
 
 
 \subsection{Circuit-Descriptor}
@@ -255,9 +294,9 @@ arrows. The names mirror the changing paranthesis structure, upper case letters 
 
 
 
-\section{Classical Arrows Hardware Development}
-Within this section we present a cycle redundancy check algorithm, implemented with arrows. Later on it's shown how netlists are
-generated. The section concludes by highlighting some of the problems with this approach.
+\section{Hardware Specification with (classical) Arrows}
+Within this section we present a cycle redundancy check (CRC) \cite{peterson:crc} algorithm, implemented with arrows. Additionally
+it's shown how netlists are generated. The section concludes by highlighting some of the problems with this approach.
 
 \subsection{CRC - Implementation}
 A CRC - cycle redundancy check - is a method to calculate checksums of data. The calculation of a CRC is based upon a polynomial
@@ -268,7 +307,7 @@ The shift register is modeled from a list and the positions of where to feedback
 the feedback value is feed back into the list by the \hs{aFloatR} arrow.
 
 \par
-Different feedback positions are captured in multiple arrows called \hs{aMoveBy$_n$}. 
+Different feedback positions are captured in multiple arrows called \hs{aMoveBy}$_n$. 
 
 \begin{haskell}
 aMoveBy5
@@ -277,6 +316,8 @@ aMoveBy5
   >:> aFloatR
   >:> aFloatR
   >:> aFlip
+  where 
+    (>:>) aA aB = aA >>> (second aB)
 \end{haskell} 
 
 The principle behind every CRC is captured in the arrow \hs{aCRC8} 
@@ -316,8 +357,8 @@ function body, our example is limited to 8Bit.
 
 
 \subsection{Example}
-A CRC-Code is equipped with a polynomial that especially fits the needs of the domain. This example shows the CRC-Code for
-USB. With the polynomial:
+A CRC-Code uses a polynomial that especially fits the needs of the domain. This example shows the CRC-Code for USB. With the
+polynomial:
 \[
   \text{USB} : x^5 + x^2 + 1 
 \]
@@ -508,7 +549,7 @@ class VArrow a where
 In the following sections we sketch different ways to express such ``Vector-Arrows'' and present different approaches to work with
 them.
 
-\subsection{Horn Clauses Solution}
+\subsection{Solution using Horn Clauses}
 As vectors are not a purely functional data structure and lists come pretty close to them the first approach would be to constrain
 a list data type in length. It is necessary to introduce a counter into the data type. We choose type level natural numbers to
 restrict the list in length.
@@ -551,9 +592,9 @@ source for larger ones.
 Another drawback with this solution is the way the \hs{VAdd} type class is defined. 
 
 
-\subsection{Type-Family Solutions}
+\subsection{Solution using Type Families}
 The next approach is to replace the Horn like clauses by actual calculations. Haskell has lately come up with a type family
-extension that comes in handy for this task.
+extension \cite{Yorgey:GHP} that comes in handy for this task.
 
 \par
 A type family in a way enables to calculate the type constructor of a data type. A feature the horn-clause solution lacks. The
@@ -597,10 +638,11 @@ information by hand. But this are only hints into a direction. At this point it 
 and gets unpractical for complicated arithmetic's.
 
 
-\subsection{Dependently-Typed Solution}
+\subsection{Solution using Dependent Types}
 A dependently typed programming language is a language, that mixes expressions with types. It therefore allows the calculation of
 types within that same language.  There are multiple languages with dependent types out there. The one with a pretty good
-connection to Haskell is Agda. The following describes the arrow class in Agda with dependent types.
+connection to Haskell is Agda\cite{MartinLofIntuitionisticTypeTheory} \cite{Norell07towardsa}. The following describes the arrow
+class in Agda with dependent types.
 
 
 \par
