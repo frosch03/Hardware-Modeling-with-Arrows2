@@ -1,5 +1,12 @@
-\documentclass[a4paper,UKenglish]{lipics}
+\documentclass[a4paper]{llncs}
+\usepackage{ucs}
+\usepackage{color}
+\usepackage{graphicx}
+\usepackage{listings}
 \usepackage{fancyvrb}
+\usepackage{textcomp}
+\usepackage{amsmath}
+\usepackage{amssymb}
 
 
 \lstnewenvironment{haskell}[1][]{
@@ -69,13 +76,11 @@
 
 
 \title{From Arrows to Netlists describing Hardware}
+\author{Matthias Brettschneider (brettschneider@hs-albsig.de) \and \\ Tobias H{\"a}berlein (haeberlein@hs-albsig.de)}
+\institute{Albstadt-Sigmaringen University}
+%\email{brettschneider@hs-albsig.de \and haeberlein@hs-albsig.de}
 
-\author[1]{Matthias Brettschneider}
-\author[2]{Tobias Häberlein}
-\affil[1]{University of Applied Science  \\ Albstadt - Sigmaringen \\ brettschneider@hs-albsig.de}
-\affil[2]{University of Applied Science  \\ Albstadt - Sigmaringen \\ haeberlein@hs-albsig.de}
-
-\keywords{functional programming, dependent typed programming, algebraic data structures, arrows, vectors, graphs, netlists}
+%% \keywords{functional programming, dependent typed programming, algebraic data structures, arrows, vectors, graphs, netlists}
 
 
 \begin{document}
@@ -84,7 +89,7 @@
 
 \begin{abstract}
 This paper describes how to transform a functional DSL into hardware represented by a netlist. In earlier papers we proposed the
-usage of an algebraic structure called ``arrows'' (basically an abstraction of Haskell's higher-order type (->)) for describing
+usage of an algebraic structure called ``arrows'' (basically an abstraction of Haskell's higher-order type ($\rightarrow$) for describing
 DSLs. This structure forms the basis of a novel concept that gives the developer a tool at hand to describe hardware functionally
 in a natural way. Aside of that an arrow provides not only a tool to synthesize, but to verify and reason about the input DSL. We
 have taken this concept to the next stage, from a static size length arrow into a fixed size length vector arrows fitting much
@@ -371,7 +376,7 @@ register. For the USB CRC $\text{bit}_0$ and $\text{bit}_2$ are \hs{xor}'ed with
 To summarize this for the USB CRC, the highest exponent is $5$. Therefore:
 \begin{itemize}
   \item the \hs{polySkip} needs to be \hs{aMoveBy5}
-  \item there are $5$ \hs{padding} bits \hs{aConst (False, (False, (False, (False, False))))} 
+  \item there are $5$ \hs{padding} bits \\ \hs{aConst (False, (False, (False, (False, False))))} 
   \item the split between \hs{start} and \hs{reminder} is after bit $5$
 \end{itemize}
 
