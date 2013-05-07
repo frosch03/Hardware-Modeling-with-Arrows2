@@ -1,4 +1,4 @@
-\documentclass[a4paper]{llncs}
+\documentclass{llncs}
 \usepackage{ucs}
 \usepackage{color}
 \usepackage{graphicx}
@@ -88,14 +88,15 @@
 
 
 \begin{abstract}
-This paper describes how to transform a functional DSL into hardware represented by a netlist. In earlier papers we proposed the
-usage of an algebraic structure called ``arrows'' (basically an abstraction of Haskell's higher-order type ($\rightarrow$) for describing
-DSLs. This structure forms the basis of a novel concept that gives the developer a tool at hand to describe hardware functionally
-in a natural way. Aside of that an arrow provides not only a tool to synthesize, but to verify and reason about the input DSL. We
-have taken this concept to the next stage, from a static size length arrow into a fixed size length vector arrows fitting much
-better to logic gates with a fixed number of in- and output pins. There are many sound possibilities to use the algebraic arrow
-data structure to model hardware. This paper presents some of them which showed to be most useful. A simple example, the
-implementation of a CRC, is used to illustrate the presented techniques.
+  This paper describes how to transform a functional domain specific langauge (DSL) into hardware represented by a netlist. In
+  earlier papers we proposed the usage of an algebraic structure called ``arrows'' (basically an abstraction of Haskell's
+  higher-order type ($\rightarrow$) for describing DSLs. This structure forms the basis of a novel concept that gives the
+  developer a tool at hand to describe hardware functionally in a natural way. Aside of that an arrow provides not only a tool to
+  synthesize, but to verify and reason about the input DSL. We have taken this concept to the next stage, from a static size
+  length arrow into a fixed size length vector arrows fitting much better to logic gates with a fixed number of in- and output
+  pins. There are many sound possibilities to use the algebraic arrow data structure to model hardware. This paper presents some
+  of them which showed to be most useful. A simple example, the implementation of a cyclic redundancy check (CRC) algorithm, is
+  used to illustrate the presented techniques.
 \end{abstract}
 
 
@@ -107,7 +108,7 @@ imperative/procedural paradigm. Our approach is mainly influenced by the functio
 
 \par
 Modeling hardware in functional languages is not new, there have been various approaches in the past. The beginning dates back to
-the early 80s where a group around Mary Sheeran came up with a functional HDL (Hardware Description Language)
+the early 80s where a group around Mary Sheeran came up with a functional hardware description language (HDL)
 muFP\cite{sheeran:muFP}. In the same decade John O'Donnell presented his functional HDL HDRE\cite{hydra:old,donnell}. These two
 HDL's gave birth to numerous later approaches that are base more or less on them.
 
@@ -120,14 +121,14 @@ a simple HDL which is embedded inside ML, another functional programming languag
 \par
 There are functional languages that are exclusively designed to describe hardware, like the language SAFL (=Statically Allocated
 Functional Language)\cite{sharp,sharp:flash,sharp:codesign}. This one compiles direct into a netlist; it does not support dynamic
-allocated storage like heaps or stacks since these kind of software features do not map well on silicone.
+allocated storage like heaps or stacks since these kind of software features do not map well on silicium.
 
 \par
 Another candidate for the functional meta programming languages section is the language \reFLect \cite{reflect}. It's one that is
 developed at Intel and tailored for hardware design and theorem proving.
 
 \par
-There are good reasons why meta programming beneficial for the use as HDLs. Meta programming allows a program to have a
+There are good reasons why meta programming is beneficial for the use as HDLs. Meta programming allows a program to have a
 representation of itself, usually by providing a data structure of the abstract syntax tree. With this tool at hand the developer
 is able to \emph{compute} parts of their program rather than \emph{write} them. This leads to a direct and natural implementation
 of program transformations.
@@ -135,7 +136,7 @@ of program transformations.
 \par
 With cryptol\cite{cryptol:programming} another class of functional HDLs enters the scene. While all the other HDL's are general
 purpose, cryptol is designed to model cryptographic hardware. A sub-language of cryptol is designed by Galois, explicit to
-generate FPGA implementations \cite{cryptol:fpga}. Cryptol has been adopted by an American agency and isn't public developed
+generate FPGA implementations \cite{cryptol:fpga}. Cryptol has been adopted by an American agency and is not public developed
 anymore.
 
 
@@ -159,29 +160,32 @@ parameters than expected. Such function calls result in yet another function whi
 arguments. 
 
 \par 
-It is clear that these concepts can't be translated into hardware where a function is symbolized by a circuit. A good HDL must
-come up with a mechanism to even out these differences. Arrows are just the right method to do the job. They offer an interface to
-the feature set of functions. Like in a construction kit an arrow enables the developer to choose from the functional function
-features. We therefore are able to define arrows that match exactly the feature set of a hardware circuit.
+It is clear that these concepts can not be translated into hardware where a function is symbolized by a circuit. A good HDL must
+come up with a mechanism to even out these differences. Arrows are a method for this, including their mathematical basis. Arrows
+offer an interface to the feature set of functions. Similar to a construction kit an arrow enables the developer to choose the
+features of a function. This is done by providing instances to the arrow type classes for arbitrary date types. We therefore are
+able to define arrows that match the feature set of a hardware circuit.
 
 \par
 Another reason for the use of arrow is that a concept which is less feature rich can be modeled more abstract. Typical HDL's do
 not take this into account. With the arrow approach we gain a maximum level of abstraction while not permitting features that
-can't translate into silicone. Arrows are a good compromise between a shallow embedded approach, where the host language is only
+can not translate into silicium. Arrows are a good compromise between a shallow embedded approach, where the host language is only
 used to construct the netlist and a deep embedded approach, where a data type inside the host language is the netlist. 
 
 \par
-The arrow \emph{proc}-notation \cite{PatersonNewNotation} also transports the data flow view into the textual source. It is easy
-to generate netlists from arrows, which basically boils down to a pretty print function. This also holds for the generation of
-typical HDL code like VHDL. They can be used to simulate behavior or proof properties of the circuit. This section gives a brief
-overview of the \hs{Grid}-Arrow that can be used to generate VHDL code or to simulate a circuit. The name Grid is analogously
-chosen to the snap circuit toys from childhood, where one also could combine hardware elements arbitrary.
+The arrow \emph{proc}-notation \cite{PatersonNewNotation} also transports the data flow view into the textual source. The
+generation of a netlist from an arrow is done by a ``pretty print'' function, that is straight forward to implement. This also
+holds for the generation of typical HDL code like VHDL. They can be used to simulate behavior or proof properties of the
+circuit. This section gives a brief overview of the \hs{Grid}-Arrow that can be used to generate VHDL code or to simulate a
+circuit. The name Grid is analogously chosen to the snap circuit toys from childhood, where one also could combine hardware
+elements arbitrary.
 
 \subsection{Grid-Arrow}
 \label{subsect:grid}
 The \hs{Grid}-Arrow is a combination of an executable arrow and a descriptive hardware component part. In a first approach one can
-imagine the descriptive part to live inside the arrow. But that does not work out, so they are stored equal to each other inside a
-tuple. The arrow resides in the first, the graph occupies the second part of the tuple.
+imagine the descriptive part to live inside the arrow. But that does not work out, so they are stored equal to each other. The
+mathematical structure of a tuple represents this conjunction. The arrow resides in the first, the graph occupies the second part
+of the tuple.
 \begin{haskell}
   newtype Grid a b c = GR (a b c, CircuitDescriptor)
 \end{haskell} 
@@ -216,17 +220,8 @@ There are three distinct forms of circuits:
       , cycles   :: Tick
       , space    :: Area
       }
-    | MkRegister
-      { nodeDesc :: NodeDescriptor
-      , bit      :: Int
-      }
-    | MkLoop
-      { nodeDesc :: NodeDescriptor
-      , nodes    :: [CircuitDescriptor]
-      , edges    :: [Edge]
-      , cycles   :: Tick
-      , space    :: Area
-      }
+    | MkRegister ...
+    | MkLoop ...
     | NoDescriptor
     deriving (Eq)
   type Netlist = CircuitDescriptor
@@ -246,9 +241,6 @@ time) is stored alongside with the graph.
       }
     deriving (Eq)
 \end{haskell} 
-% Each node itself is a \hs{CircuitDescriptor} and contains a list of \hs{CircuitDescriptor}s, so each node could be described
-% recursively, which suits hardware very well.
-
 To avoid corrupted data types, smart constructors are used. They ensure correct formed graphs by checking the incoming data
 against given constraints and then generate only valid graphs. For example the combinatorial section only accepts non looping
 connections.
@@ -394,7 +386,7 @@ last essential describing part about the component are the list of in- and outgo
 All this information are sub summed under the ``NodeDescriptor'' data type. Our NodeDescriptor distinguishes four types of
 components. One of them are the combinatorial components. They are defined without any form of clock in mind. It is possible to
 compute the result of such a component. Also one could substitute the conglomerate of combinatorial components by a single
-function f. 
+function, called \hs{f}. 
 
 Multiple combinatorial components are combined to bigger components by a clocked register. The register has an input for a clock
 signal and therefore takes care of the clock synchronization. Between every two registers must be at least one combinatorial
@@ -419,7 +411,7 @@ With a netlist being an universal description of the hardware circuits it is our
 into one. Every HDL (hardware description language) comes with quirks that must be respected. To translate a netlist into a
 specific hdl like VHDL one considers the idiosyncrasy of VHDL. That are things like the header of a VHDL file, the components
 which are described within Entity's or the wires that are called portmaps in VHDL. To the outside, the translation process hides
-behind the ``showCircuit'' method.
+behind a pretty print function, called ``showCircuit''.
 
 \par
 Functions that name single elements are named starting with ``name'' in the function name. VHDL quirks are represented by the
@@ -440,22 +432,6 @@ names. Every element that is used in the VHDL context to depict a netlist, is pr
 ``Component'', ``Signal'' or ``Portmap''. A component in the VHDL sense is build from entity's. To generate a VHDL netlist, all
 the subnodes from the graph-view are taken. An entity is generated for every one of the subnodes. If all entity's are generated
 the VHDL component header is the big bracket around them. 
-
-\begin{haskell}
-showCircuit :: CircuitDescriptor ->  String
-showCircuit g 
-     = concat $ map break
-     [ ""
-     , vhdl_header
-     , vhdl_entity         g namedComps
-     , vhdl_architecture g 
-     , vhdl_components     g namedComps
-     , vhdl_signals        g namedEdges
-     , vhdl_portmaps       g namedComps namedEdges
-     ]
-     where namedEdges = generateNamedEdges g
-            namedComps = generateNamedComps g
-\end{haskell} % $
 
 \par
 To the outside only two functions remain view able. Both of them take something into a \hs{String}, one from a
@@ -555,9 +531,10 @@ In the following sections we sketch different ways to express such ``Vector-Arro
 them.
 
 \subsection{Solution using Horn Clauses}
-As vectors are not a purely functional data structure and lists come pretty close to them the first approach would be to constrain
-a list data type in length. It is necessary to introduce a counter into the data type. We choose type level natural numbers to
-restrict the list in length.
+Vectors are a data structure which can not be implemented inside haskells type system. In fact, dependent types are needed to
+express vectores with the right abstraction. Within haskell's type system, lists match vectors in a way. Vectors do have a defined
+length; lists are of infinite length. Our first approach would be to constrain a list in it's length.  Therefore it is necessary
+to introduce a counter into the data type. We choose type level natural numbers to restrict the list in length.
 \begin{haskell}
 data Vec n a where
   T    :: Vec VZero a
@@ -702,7 +679,7 @@ record VArrow (_~>_ : Set -> Set -> Set) : Set1 where
 This specifies a record over a function like type \hs{_~>_}. With the \hs{forall} definition one matches the context of a Haskell
 type definition. The \hs{Vec} denotes a vector type defined in Agda that is used to specify the arrow record. A close look at the
 \hs{firsts} and \hs{seconds} statements reveals, that they have the same type. If \hs{firsts} comes with a type $(n + k)$ then it
-would be reasonable to use $(k + n)$ in the type of the \hs{seconds} statement. This can't be done because of the way the addition
+would be reasonable to use $(k + n)$ in the type of the \hs{seconds} statement. This can not be done because of the way the addition
 is defined. 
 
 \par
@@ -720,35 +697,25 @@ graph of the circuit structure, that can later be translated into all forms of h
 
 
 \section{Conclusion}
-With this paper we showed how to model circuits from arrow descriptions. Arrows bring just the right amount of abstraction into
-the hardware design process. This offers on the one hand a precise tool for the developer. On the other hand it stays as flexible
-as it is usual in the software design process.
-
-\par
-With the help of the data type \hs{Grid} we showed how to include the newly generated arrows alongside with a describing
-part. This one is not only stored in a graph structure, but in a hierarchically graph which matches the hierarchically structure
-of hardware pretty good. The concept, to construct a circuit from other circuits that also have underlying structure is common in
-the hardware design world (e.g. UML-Activity-Diagrams, Petri-Nets, etc.). 
-
-\par
-Our concept is mighty enough to be able to generate graphs and therefore netlists from only the arrow definitions. We think of
-netlists as a form of graphs. On the other way round the graph is a mathematical description of what a netlist is. To get from a
-graph to a netlist only a ``pretty-print'' function is needed.
+With this paper we showed how to model hardware with arrow descriptions and generate circuits from them. Arrows bring just the
+right amount of abstraction into the hardware design process. This offers on the one hand a precise tool for the developer. On the
+other hand it stays as flexible as it is usual in the software design process.
 
 \par
 The classical arrows come with a tuple inner structure which is the foundation of our problems. Although we are able to simulate
 list-like behavior it is neither practical to work with nor is it correct in a data type sense. To take arrows from tuples to
-arrows with vectors is therefore mandatory.
+arrows with vectors is therefore mandatory. We showed different ways, how to get as close as possible to vector arrows. 
+
+\par
+Our concept is powerful enough to generate graphs and therefore netlists from only the arrow definitions. We think of netlists as
+a form of graphs. On the other way round the graph is a mathematical description of what a netlist is. We also showed how to get
+from a graph to a netlist by a straight forward ``pretty-print'' function.
 
 \par
 A proof of the superiority of the functional approach is the modeled CRC circuit. Although we used the classical arrows for
 modeling, it wasn't much pain to model the CRC algorithm with them. It is up to the developer to use a decent data layout so that
 the tuple structure stays out of the way. The problems that come from the tuple arrows are theoretically gone with a vector
 arrow. It is just not possible to define vectors in such a way inside Haskell that blend with the arrows. 
-
-\par
-At last we where therefore forced to take the vector arrow concept into a language that can handle them naturally. Also the gained
-type safety of the vectors are a benefit the developer can't abdicate while working in a functional language. 
 
 \section{Future Work}
 We are going to follow the vector approach inside Agda. The graph generation is something that can be done completely inside a
